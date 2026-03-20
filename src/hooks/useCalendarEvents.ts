@@ -25,9 +25,14 @@ interface CalendarData {
 export function useCalendarEvents(selectedDate: string) {
   const { getValidGoogleToken, getValidMicrosoftToken } = useAuth();
 
-  // Build day boundaries
-  const dayStart = `${selectedDate}T${pad(DAY_START_HOUR)}:00:00`;
-  const dayEnd = `${selectedDate}T${pad(DAY_END_HOUR)}:00:00`;
+  // Build day boundaries using Date arithmetic so hour=24 works correctly
+  const dayStartDate = new Date(selectedDate);
+  dayStartDate.setHours(DAY_START_HOUR, 0, 0, 0);
+  const dayEndDate = new Date(selectedDate);
+  dayEndDate.setHours(0, 0, 0, 0);
+  dayEndDate.setMinutes(dayEndDate.getMinutes() + DAY_END_HOUR * 60);
+  const dayStart = dayStartDate.toISOString();
+  const dayEnd = dayEndDate.toISOString();
   const timeMin = `${selectedDate}T00:00:00Z`;
   const timeMax = `${selectedDate}T23:59:59Z`;
 

@@ -1,19 +1,24 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { UnifiedEvent } from "../types/event";
 
 interface Props {
   event: UnifiedEvent;
+  onPress?: () => void;
 }
 
-export default function EventCard({ event }: Props) {
+export default function EventCard({ event, onPress }: Props) {
   const borderColor = event.source === "google" ? "#4285F4" : "#00A4EF";
   const sourceLabel = event.source === "google" ? "Google" : "Outlook";
   const startTime = formatTime(event.start);
   const endTime = formatTime(event.end);
 
   return (
-    <View style={[styles.card, { borderLeftColor: borderColor }]}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={onPress ? 0.75 : 1}
+      style={[styles.card, { borderLeftColor: borderColor }]}
+    >
       <View style={styles.header}>
         <Text style={styles.title} numberOfLines={1}>
           {event.title}
@@ -32,7 +37,9 @@ export default function EventCard({ event }: Props) {
           📍 {event.location}
         </Text>
       ) : null}
-    </View>
+
+      {onPress && <Text style={styles.tapHint}>Tap for details →</Text>}
+    </TouchableOpacity>
   );
 }
 
@@ -87,5 +94,11 @@ const styles = StyleSheet.create({
     color: "#A0A0B8",
     fontSize: 12,
     marginTop: 4,
+  },
+  tapHint: {
+    color: "#5555AA",
+    fontSize: 11,
+    marginTop: 6,
+    fontStyle: "italic",
   },
 });

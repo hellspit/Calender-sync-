@@ -15,5 +15,5 @@ export const MICROSOFT_CONFIG = {
 };
 
 // Day boundaries for free-time detection (24-hour format)
-export const DAY_START_HOUR = 9; // 09:00
-export const DAY_END_HOUR = 21; // 21:00
+export const DAY_START_HOUR = 0;  // 00:00 midnight
+export const DAY_END_HOUR = 24;  // 24:00 midnight (end of day)

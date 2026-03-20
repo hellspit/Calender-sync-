@@ -7,6 +7,8 @@ export interface UnifiedEvent {
   source: "google" | "outlook";
   isAllDay?: boolean;
   location?: string;
+  description?: string;
+  attendees?: string[]; // list of display names or emails
 }
 
 // A gap between events where the user is free

@@ -9,6 +9,9 @@ import { UnifiedEvent } from "../types/event";
  */
 export function normalizeGoogleEvent(raw: any): UnifiedEvent {
   const isAllDay = !!raw.start?.date;
+  const attendees: string[] = (raw.attendees ?? []).map(
+    (a: any) => a.displayName || a.email || ""
+  ).filter(Boolean);
   return {
     id: `g_${raw.id}`,
     title: raw.summary || "(No title)",
@@ -17,6 +20,8 @@ export function normalizeGoogleEvent(raw: any): UnifiedEvent {
     source: "google",
     isAllDay,
     location: raw.location,
+    description: raw.description,
+    attendees: attendees.length > 0 ? attendees : undefined,
   };
 }
 
@@ -42,6 +47,10 @@ export function normalizeOutlookEvent(raw: any): UnifiedEvent {
       : `${raw.end.dateTime}Z`
     : "";
 
+  const attendees: string[] = (raw.attendees ?? []).map(
+    (a: any) => a.emailAddress?.name || a.emailAddress?.address || ""
+  ).filter(Boolean);
+
   return {
     id: `m_${raw.id}`,
     title: raw.subject || "(No title)",
@@ -50,6 +59,8 @@ export function normalizeOutlookEvent(raw: any): UnifiedEvent {
     source: "outlook",
     isAllDay: raw.isAllDay || false,
     location: raw.location?.displayName,
+    description: raw.bodyPreview || raw.body?.content,
+    attendees: attendees.length > 0 ? attendees : undefined,
   };
 }
 
