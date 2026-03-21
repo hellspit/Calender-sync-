@@ -11,19 +11,22 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Switch,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../auth/AuthContext";
 import { createGoogleEvent, NewEventPayload } from "../services/googleCalendar";
 import { createOutlookEvent } from "../services/outlookCalendar";
+import { DatePickerField, TimePickerField } from "./PickerField";
 
 export type AddTarget = "google" | "microsoft" | "both";
 
 interface Props {
   visible: boolean;
   target: AddTarget;
-  initialDate: string; // "YYYY-MM-DD"
+  initialDate: string;
   onClose: () => void;
-  onSuccess: () => void; // called to refresh the event list
+  onSuccess: () => void;
 }
 
 export default function AddEventModal({
@@ -35,7 +38,6 @@ export default function AddEventModal({
 }: Props) {
   const { getValidGoogleToken, getValidMicrosoftToken } = useAuth();
 
-  // Form state
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(initialDate);
   const [startTime, setStartTime] = useState("10:00");
@@ -45,19 +47,12 @@ export default function AddEventModal({
   const [isAllDay, setIsAllDay] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const targetLabel =
-    target === "both"
-      ? "Google + Microsoft"
-      : target === "google"
-      ? "Google Calendar"
-      : "Outlook Calendar";
+  const isGoogle = target === "google";
+  const isBoth = target === "both";
+  const accentColor = isGoogle ? "#4285F4" : isBoth ? "#7C6EFF" : "#2884E0";
 
-  const accentColor =
-    target === "google"
-      ? "#4285F4"
-      : target === "microsoft"
-      ? "#00A4EF"
-      : "#6C63FF";
+  const targetLabel =
+    isBoth ? "Google & Outlook" : isGoogle ? "Google Calendar" : "Outlook Calendar";
 
   const resetForm = () => {
     setTitle("");
@@ -75,14 +70,11 @@ export default function AddEventModal({
   };
 
   const buildPayload = (): NewEventPayload => {
-    // Use the device's actual UTC offset
     const now = new Date();
     const totalMinutes = -now.getTimezoneOffset();
     const sign = totalMinutes >= 0 ? "+" : "-";
-    const absMinutes = Math.abs(totalMinutes);
-    const hh = String(Math.floor(absMinutes / 60)).padStart(2, "0");
-    const mm = String(absMinutes % 60).padStart(2, "0");
-    const offset = `${sign}${hh}:${mm}`;
+    const abs = Math.abs(totalMinutes);
+    const offset = `${sign}${String(Math.floor(abs / 60)).padStart(2, "0")}:${String(abs % 60).padStart(2, "0")}`;
     return {
       title,
       startISO: `${date}T${startTime}:00${offset}`,
@@ -103,46 +95,32 @@ export default function AddEventModal({
       Alert.alert("Invalid time", "End time must be after start time.");
       return;
     }
-
     setIsSubmitting(true);
     const payload = buildPayload();
     const errors: string[] = [];
-
     try {
       if (target === "google" || target === "both") {
         const token = await getValidGoogleToken();
-        if (token) {
-          await createGoogleEvent(token, payload);
-        } else {
-          errors.push("Google (not signed in)");
-        }
+        if (token) await createGoogleEvent(token, payload);
+        else errors.push("Google (not signed in)");
       }
-
       if (target === "microsoft" || target === "both") {
         const token = await getValidMicrosoftToken();
-        if (token) {
-          await createOutlookEvent(token, payload);
-        } else {
-          errors.push("Microsoft (not signed in)");
-        }
+        if (token) await createOutlookEvent(token, payload);
+        else errors.push("Microsoft (not signed in)");
       }
-
       if (errors.length > 0) {
-        Alert.alert(
-          "Partial success",
-          `Event created, but failed for: ${errors.join(", ")}`
-        );
+        Alert.alert("Partial success", `Event created, but failed for: ${errors.join(", ")}`);
       } else {
-        Alert.alert("✅ Event created!", `"${title}" added to ${targetLabel}.`);
+        Alert.alert("Event created", `"${title}" added to ${targetLabel}.`);
       }
-
       resetForm();
       onSuccess();
       onClose();
     } catch (err: any) {
       Alert.alert(
         "Error",
-        err?.response?.data?.error?.message || err?.message || "Failed to create event. Please try again."
+        err?.response?.data?.error?.message || err?.message || "Failed to create event."
       );
     } finally {
       setIsSubmitting(false);
@@ -161,23 +139,24 @@ export default function AddEventModal({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: accentColor }]}>
-          <TouchableOpacity onPress={handleClose} style={styles.headerBtn}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleClose} style={styles.headerSideBtn}>
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
           <View style={styles.headerCenter}>
+            <View style={[styles.targetDot, { backgroundColor: accentColor }]} />
             <Text style={styles.headerTitle}>New Event</Text>
             <Text style={styles.headerSub}>{targetLabel}</Text>
           </View>
           <TouchableOpacity
             onPress={handleSubmit}
-            style={styles.headerBtn}
+            style={[styles.saveBtn, { backgroundColor: accentColor }]}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.saveText}>Add ✓</Text>
+              <Text style={styles.saveBtnText}>Add</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -189,102 +168,116 @@ export default function AddEventModal({
           showsVerticalScrollIndicator={false}
         >
           {/* Title */}
-          <Text style={styles.label}>Title *</Text>
+          <FL icon="text" label="Title" required />
           <TextInput
             style={styles.input}
             value={title}
             onChangeText={setTitle}
             placeholder="Event title"
-            placeholderTextColor="#44445A"
+            placeholderTextColor="#3A3A58"
             selectionColor={accentColor}
           />
 
           {/* All-day toggle */}
           <View style={styles.toggleRow}>
-            <Text style={styles.label}>All Day</Text>
-            <TouchableOpacity
-              style={[styles.toggle, isAllDay && { backgroundColor: accentColor }]}
-              onPress={() => setIsAllDay(!isAllDay)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.toggleText}>{isAllDay ? "ON" : "OFF"}</Text>
-            </TouchableOpacity>
+            <View style={styles.toggleLeft}>
+              <Ionicons
+                name="sunny-outline"
+                size={15}
+                color="#7878A8"
+                style={{ marginRight: 8 }}
+              />
+              <Text style={styles.toggleLabel}>All Day Event</Text>
+            </View>
+            <Switch
+              value={isAllDay}
+              onValueChange={setIsAllDay}
+              trackColor={{ false: "#1E1E34", true: `${accentColor}90` }}
+              thumbColor={isAllDay ? accentColor : "#3C3C5E"}
+            />
           </View>
 
           {/* Date */}
-          <Text style={styles.label}>Date</Text>
-          <TextInput
-            style={styles.input}
-            value={date}
-            onChangeText={setDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#44445A"
-            selectionColor={accentColor}
-            keyboardType="numbers-and-punctuation"
-          />
+          <FL icon="calendar-outline" label="Date" />
+          <DatePickerField value={date} onChange={setDate} accentColor={accentColor} />
 
-          {/* Start / End time — hidden if all day */}
+          {/* Times */}
           {!isAllDay && (
-            <View style={styles.timeRow}>
-              <View style={styles.timeCol}>
-                <Text style={styles.label}>Start Time</Text>
-                <TextInput
-                  style={styles.input}
-                  value={startTime}
-                  onChangeText={setStartTime}
-                  placeholder="HH:MM"
-                  placeholderTextColor="#44445A"
-                  selectionColor={accentColor}
-                  keyboardType="numbers-and-punctuation"
-                />
+            <>
+              <View style={styles.timeRow}>
+                <View style={styles.timeCol}>
+                  <FL icon="play-circle-outline" label="Start time" />
+                  <TimePickerField
+                    value={startTime}
+                    onChange={setStartTime}
+                    accentColor={accentColor}
+                  />
+                </View>
+                <View style={styles.timeSepBox}>
+                  <Ionicons name="arrow-forward" size={16} color="#3C3C5E" />
+                </View>
+                <View style={styles.timeCol}>
+                  <FL icon="stop-circle-outline" label="End time" />
+                  <TimePickerField
+                    value={endTime}
+                    onChange={setEndTime}
+                    accentColor={accentColor}
+                  />
+                </View>
               </View>
-              <View style={styles.timeSep}>
-                <Text style={styles.timeSepText}>→</Text>
-              </View>
-              <View style={styles.timeCol}>
-                <Text style={styles.label}>End Time</Text>
-                <TextInput
-                  style={styles.input}
-                  value={endTime}
-                  onChangeText={setEndTime}
-                  placeholder="HH:MM"
-                  placeholderTextColor="#44445A"
-                  selectionColor={accentColor}
-                  keyboardType="numbers-and-punctuation"
-                />
-              </View>
-            </View>
+
+              {/* Duration indicator */}
+              {startTime && endTime && startTime < endTime && (
+                <View style={styles.durationHint}>
+                  <Ionicons
+                    name="hourglass-outline"
+                    size={12}
+                    color={accentColor}
+                    style={{ marginRight: 5 }}
+                  />
+                  <Text style={[styles.durationHintText, { color: accentColor }]}>
+                    {calcDuration(startTime, endTime)}
+                  </Text>
+                </View>
+              )}
+            </>
           )}
 
           {/* Location */}
-          <Text style={styles.label}>Location</Text>
+          <FL icon="location-outline" label="Location" />
           <TextInput
             style={styles.input}
             value={location}
             onChangeText={setLocation}
             placeholder="Add location (optional)"
-            placeholderTextColor="#44445A"
+            placeholderTextColor="#3A3A58"
             selectionColor={accentColor}
           />
 
           {/* Description */}
-          <Text style={styles.label}>Description</Text>
+          <FL icon="document-text-outline" label="Description" />
           <TextInput
             style={[styles.input, styles.multiline]}
             value={description}
             onChangeText={setDescription}
             placeholder="Add description (optional)"
-            placeholderTextColor="#44445A"
+            placeholderTextColor="#3A3A58"
             multiline
             numberOfLines={4}
             textAlignVertical="top"
             selectionColor={accentColor}
           />
 
-          {/* Destination info */}
-          <View style={[styles.destBadge, { borderColor: accentColor }]}>
+          {/* Destination badge */}
+          <View style={[styles.destBadge, { borderColor: `${accentColor}30` }]}>
+            <Ionicons
+              name="send-outline"
+              size={13}
+              color={accentColor}
+              style={{ marginRight: 7 }}
+            />
             <Text style={[styles.destText, { color: accentColor }]}>
-              📤 Will be added to: {targetLabel}
+              Adding to {targetLabel}
             </Text>
           </View>
         </ScrollView>
@@ -293,66 +286,129 @@ export default function AddEventModal({
   );
 }
 
+// ─── Field Label helper ───────────────────────────────────────────────────────
+
+function FL({
+  icon,
+  label,
+  required,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <View style={fl.row}>
+      <Ionicons name={icon} size={12} color="#4A4A6E" style={{ marginRight: 5 }} />
+      <Text style={fl.text}>
+        {label}
+        {required ? <Text style={fl.req}> *</Text> : null}
+      </Text>
+    </View>
+  );
+}
+
+const fl = StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "center", marginTop: 20, marginBottom: 8 },
+  text: {
+    color: "#5A5A7E",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.9,
+  },
+  req: { color: "#7C6EFF" },
+});
+
+// ─── Duration helper ──────────────────────────────────────────────────────────
+
+function calcDuration(start: string, end: string): string {
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const total = (eh * 60 + em) - (sh * 60 + sm);
+  if (total <= 0) return "";
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} hr`;
+  return `${h} hr ${m} min`;
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
+  container: { flex: 1, backgroundColor: "#0C0C16" },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingTop: 52,
-    paddingBottom: 16,
+    paddingBottom: 18,
     paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1A1A2E",
+    backgroundColor: "#111120",
   },
-  headerBtn: { minWidth: 60 },
-  headerCenter: { alignItems: "center" },
-  headerTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
-  headerSub: { color: "rgba(255,255,255,0.75)", fontSize: 12, marginTop: 2 },
-  cancelText: { color: "rgba(255,255,255,0.85)", fontSize: 15, fontWeight: "500" },
-  saveText: { color: "#fff", fontSize: 15, fontWeight: "800", textAlign: "right" },
-  body: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
-  label: {
-    color: "#6C6C8A",
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginTop: 20,
-    marginBottom: 8,
+  headerSideBtn: { minWidth: 60 },
+  cancelText: { color: "#7878A8", fontSize: 15, fontWeight: "500" },
+  headerCenter: { alignItems: "center", gap: 3 },
+  targetDot: { width: 6, height: 6, borderRadius: 3 },
+  headerTitle: { color: "#F0EEFF", fontSize: 17, fontWeight: "700" },
+  headerSub: { color: "#5A5A7A", fontSize: 12 },
+  saveBtn: {
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    minWidth: 60,
+    alignItems: "center",
   },
+  saveBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  body: { flex: 1, paddingHorizontal: 20, paddingTop: 4 },
   input: {
-    backgroundColor: "#1E1E2E",
-    borderRadius: 10,
+    backgroundColor: "#141424",
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: "#ECECEC",
+    paddingVertical: 13,
+    color: "#EEEEFF",
     fontSize: 15,
     borderWidth: 1,
-    borderColor: "#2A2A3E",
+    borderColor: "#1E1E34",
   },
   multiline: { minHeight: 100, paddingTop: 12 },
   toggleRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 20,
+    backgroundColor: "#141424",
+    borderRadius: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#1E1E34",
   },
-  toggle: {
-    backgroundColor: "#2A2A3E",
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-  },
-  toggleText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  toggleLeft: { flexDirection: "row", alignItems: "center" },
+  toggleLabel: { color: "#C8C8E8", fontSize: 15, fontWeight: "500" },
   timeRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
   timeCol: { flex: 1 },
-  timeSep: { marginBottom: 12, paddingHorizontal: 4 },
-  timeSepText: { color: "#6C6C8A", fontSize: 18 },
+  timeSepBox: { paddingBottom: 14, paddingHorizontal: 2 },
+  durationHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    marginLeft: 2,
+  },
+  durationHintText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
   destBadge: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 28,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 14,
-    alignItems: "center",
   },
   destText: { fontSize: 13, fontWeight: "600" },
 });

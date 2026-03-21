@@ -14,6 +14,8 @@ import {
   Platform,
   Alert,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CalendarView from "../components/CalendarView";
 import EventCard from "../components/EventCard";
 import { useCalendarEvents } from "../hooks/useCalendarEvents";
@@ -22,8 +24,10 @@ import AddEventModal, { AddTarget } from "../components/AddEventModal";
 import { useAuth } from "../auth/AuthContext";
 import { updateGoogleEvent, deleteGoogleEvent } from "../services/googleCalendar";
 import { updateOutlookEvent, deleteOutlookEvent } from "../services/outlookCalendar";
+import { DatePickerField, TimePickerField } from "../components/PickerField";
 
 export default function CalendarScreen() {
+  const insets = useSafeAreaInsets();
   const today = new Date().toISOString().substring(0, 10);
   const [selectedDate, setSelectedDate] = useState(today);
   const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null);
@@ -48,7 +52,7 @@ export default function CalendarScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Monthly calendar */}
       <CalendarView
         selectedDate={selectedDate}
@@ -56,7 +60,7 @@ export default function CalendarScreen() {
         onSelectDate={setSelectedDate}
       />
 
-      {/* Date header + refresh button */}
+      {/* Date header + refresh */}
       <View style={styles.headerRow}>
         <Text style={styles.dateHeader}>{formatHeader(selectedDate)}</Text>
         <TouchableOpacity
@@ -65,18 +69,30 @@ export default function CalendarScreen() {
           activeOpacity={0.7}
         >
           {isFetching ? (
-            <ActivityIndicator size="small" color="#6C63FF" />
+            <ActivityIndicator size="small" color="#7C6EFF" />
           ) : (
-            <Text style={styles.refreshIcon}>🔄</Text>
+            <Ionicons name="refresh-outline" size={18} color="#7878A8" />
           )}
         </TouchableOpacity>
       </View>
 
+      {/* Event count pill */}
+      {!isLoading && data && data.events.length > 0 && (
+        <Text style={styles.eventCountLabel}>
+          {data.events.length} event{data.events.length > 1 ? "s" : ""}
+        </Text>
+      )}
+
       {/* Event list */}
       {isLoading ? (
-        <ActivityIndicator size="large" color="#6C63FF" style={{ marginTop: 20 }} />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#7C6EFF" />
+        </View>
       ) : error ? (
-        <Text style={styles.errorText}>Failed to load events</Text>
+        <View style={styles.centered}>
+          <Ionicons name="warning-outline" size={32} color="#FF5C6A" />
+          <Text style={styles.errorText}>Failed to load events</Text>
+        </View>
       ) : data && data.events.length > 0 ? (
         <FlatList
           data={data.events}
@@ -85,10 +101,16 @@ export default function CalendarScreen() {
             <EventCard event={item} onPress={() => setSelectedEvent(item)} />
           )}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingBottom: 110, paddingTop: 4 }}
         />
       ) : (
-        <Text style={styles.emptyText}>No events for this day 🎉</Text>
+        <View style={styles.centered}>
+          <View style={styles.emptyIcon}>
+            <Ionicons name="checkmark-circle-outline" size={32} color="#3C3C5E" />
+          </View>
+          <Text style={styles.emptyTitle}>All clear</Text>
+          <Text style={styles.emptyText}>No events for this day</Text>
+        </View>
       )}
 
       {/* Event Detail Modal */}
@@ -110,7 +132,7 @@ export default function CalendarScreen() {
         )}
       </Modal>
 
-      {/* FAB menu backdrop */}
+      {/* FAB backdrop */}
       {showFabMenu && (
         <TouchableOpacity
           style={styles.backdrop}
@@ -119,43 +141,36 @@ export default function CalendarScreen() {
         />
       )}
 
-      {/* FAB option menu */}
+      {/* FAB menu */}
       {showFabMenu && (
-        <View style={styles.fabMenu}>
-          <TouchableOpacity
-            style={[styles.fabOption, { borderLeftColor: "#4285F4" }]}
-            onPress={() => openAddModal("google")}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.fabOptionIcon}>🔵</Text>
-            <Text style={styles.fabOptionLabel}>Add to Google</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.fabOption, { borderLeftColor: "#00A4EF" }]}
-            onPress={() => openAddModal("microsoft")}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.fabOptionIcon}>🔷</Text>
-            <Text style={styles.fabOptionLabel}>Add to Microsoft</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.fabOption, { borderLeftColor: "#6C63FF" }]}
-            onPress={() => openAddModal("both")}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.fabOptionIcon}>📅</Text>
-            <Text style={styles.fabOptionLabel}>Add to Both</Text>
-          </TouchableOpacity>
+        <View style={[styles.fabMenu, { bottom: insets.bottom + 100 }]}>
+          {[
+            { target: "google" as AddTarget, label: "Add to Google", color: "#4285F4" },
+            { target: "microsoft" as AddTarget, label: "Add to Microsoft", color: "#2884E0" },
+            { target: "both" as AddTarget, label: "Add to Both", color: "#7C6EFF" },
+          ].map(({ target, label, color }) => (
+            <TouchableOpacity
+              key={target}
+              style={[styles.fabOption, { borderLeftColor: color }]}
+              onPress={() => openAddModal(target)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.fabOptionDot, { backgroundColor: `${color}25` }]}>
+                <View style={[styles.fabOptionDotInner, { backgroundColor: color }]} />
+              </View>
+              <Text style={styles.fabOptionLabel}>{label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       )}
 
-      {/* Floating + button */}
+      {/* FAB button */}
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { bottom: insets.bottom + 30 }]}
         onPress={() => setShowFabMenu(!showFabMenu)}
         activeOpacity={0.85}
       >
-        <Text style={styles.fabIcon}>{showFabMenu ? "✕" : "+"}</Text>
+        <Ionicons name={showFabMenu ? "close" : "add"} size={26} color="#fff" />
       </TouchableOpacity>
 
       {/* Add Event Modal */}
@@ -172,7 +187,7 @@ export default function CalendarScreen() {
   );
 }
 
-// ─── Event Detail Modal ───────────────────────────────────────────────────────
+// ─── Event Detail Modal ────────────────────────────────────────────────────────
 
 function EventDetailModal({
   event,
@@ -190,10 +205,8 @@ function EventDetailModal({
   getValidMicrosoftToken: () => Promise<string | null>;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-
-  const accentColor = event.source === "google" ? "#4285F4" : "#00A4EF";
-  const sourceLabel = event.source === "google" ? "Google Calendar" : "Outlook Calendar";
-  const sourceIcon = event.source === "google" ? "🔵" : "🔷";
+  const isGoogle = event.source === "google";
+  const accentColor = isGoogle ? "#4285F4" : "#2884E0";
 
   const startDate = new Date(event.start);
   const endDate = new Date(event.end);
@@ -208,11 +221,9 @@ function EventDetailModal({
   const formattedStart = event.isAllDay
     ? "All day"
     : startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
   const formattedEnd = event.isAllDay
     ? ""
     : endDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
   const durationText = event.isAllDay ? null : formatDuration(startDate, endDate);
 
   if (isEditing) {
@@ -233,115 +244,127 @@ function EventDetailModal({
   }
 
   return (
-    <View style={modal.container}>
+    <View style={detail.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Colored banner */}
-      <View style={[modal.banner, { backgroundColor: accentColor }]}>
-        {/* Top row: Close + Edit */}
-        <View style={modal.bannerTopRow}>
-          <TouchableOpacity style={modal.closeBtn} onPress={onClose} activeOpacity={0.7}>
-            <Text style={modal.closeText}>✕ Close</Text>
+      {/* Header banner */}
+      <View style={[detail.banner, { borderBottomColor: accentColor }]}>
+        <View style={detail.bannerTopRow}>
+          <TouchableOpacity style={detail.closeBtn} onPress={onClose} activeOpacity={0.7}>
+            <Ionicons name="chevron-down" size={22} color="#7878A8" />
           </TouchableOpacity>
           <TouchableOpacity
-            style={modal.editBtn}
+            style={[detail.editBtn, { backgroundColor: `${accentColor}20`, borderColor: `${accentColor}40` }]}
             onPress={() => setIsEditing(true)}
             activeOpacity={0.7}
           >
-            <Text style={modal.editBtnText}>✏️ Edit</Text>
+            <Ionicons name="pencil-outline" size={13} color={accentColor} style={{ marginRight: 5 }} />
+            <Text style={[detail.editBtnText, { color: accentColor }]}>Edit</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={modal.bannerTitle} numberOfLines={3}>
-          {event.title}
-        </Text>
-        <View style={modal.sourceBadge}>
-          <Text style={modal.sourceBadgeText}>
-            {sourceIcon} {sourceLabel}
+        <View style={[detail.sourcePill, { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30` }]}>
+          <View style={[detail.sourceDot, { backgroundColor: accentColor }]} />
+          <Text style={[detail.sourcePillText, { color: accentColor }]}>
+            {isGoogle ? "Google Calendar" : "Outlook Calendar"}
           </Text>
         </View>
+
+        <Text style={detail.bannerTitle} numberOfLines={3}>
+          {event.title}
+        </Text>
       </View>
 
       <ScrollView
-        style={modal.body}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={detail.body}
+        contentContainerStyle={{ paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Date & Time ── */}
-        <View style={modal.section}>
-          <Text style={modal.sectionIcon}>📅</Text>
-          <View style={modal.sectionContent}>
-            <Text style={modal.sectionLabel}>Date</Text>
-            <Text style={modal.sectionValue}>{formattedDate}</Text>
+        {/* Date & Time */}
+        <DetailSection icon="calendar-outline" iconColor="#7878A8">
+          <Text style={detail.sectionLabel}>Date</Text>
+          <Text style={detail.sectionValue}>{formattedDate}</Text>
+          <Text style={detail.sectionLabel}>Time</Text>
+          <Text style={detail.sectionValue}>
+            {event.isAllDay ? "All day" : `${formattedStart} — ${formattedEnd}`}
+          </Text>
+          {durationText && (
+            <View style={detail.durationPill}>
+              <Ionicons name="time-outline" size={12} color="#7C6EFF" style={{ marginRight: 5 }} />
+              <Text style={detail.durationText}>{durationText}</Text>
+            </View>
+          )}
+        </DetailSection>
 
-            <Text style={modal.sectionLabel}>Time</Text>
-            <Text style={modal.sectionValue}>
-              {event.isAllDay ? "All day" : `${formattedStart} — ${formattedEnd}`}
-            </Text>
+        <View style={detail.divider} />
 
-            {durationText && (
-              <Text style={modal.duration}>⏱ {durationText}</Text>
-            )}
-          </View>
-        </View>
+        {/* Location */}
+        <DetailSection icon="location-outline" iconColor="#7878A8">
+          <Text style={detail.sectionLabel}>Location</Text>
+          {event.location ? (
+            <Text style={detail.sectionValue}>{event.location}</Text>
+          ) : (
+            <Text style={detail.emptyValue}>Not specified</Text>
+          )}
+        </DetailSection>
 
-        <View style={modal.divider} />
+        <View style={detail.divider} />
 
-        {/* ── Location ── */}
-        <View style={modal.section}>
-          <Text style={modal.sectionIcon}>📍</Text>
-          <View style={modal.sectionContent}>
-            <Text style={modal.sectionLabel}>Location</Text>
-            <Text style={event.location ? modal.sectionValue : modal.emptyValue}>
-              {event.location || "—"}
-            </Text>
-          </View>
-        </View>
+        {/* Description */}
+        <DetailSection icon="document-text-outline" iconColor="#7878A8">
+          <Text style={detail.sectionLabel}>Description</Text>
+          {event.description ? (
+            <Text style={detail.descText}>{event.description}</Text>
+          ) : (
+            <Text style={detail.emptyValue}>No description</Text>
+          )}
+        </DetailSection>
 
-        <View style={modal.divider} />
+        <View style={detail.divider} />
 
-        {/* ── Description ── */}
-        <View style={modal.section}>
-          <Text style={modal.sectionIcon}>📝</Text>
-          <View style={modal.sectionContent}>
-            <Text style={modal.sectionLabel}>Description</Text>
-            <Text style={event.description ? modal.descriptionText : modal.emptyValue}>
-              {event.description || "—"}
-            </Text>
-          </View>
-        </View>
-
-        <View style={modal.divider} />
-
-        {/* ── Attendees ── */}
-        <View style={modal.section}>
-          <Text style={modal.sectionIcon}>👥</Text>
-          <View style={modal.sectionContent}>
-            <Text style={modal.sectionLabel}>
-              Attendees{event.attendees && event.attendees.length > 0
-                ? ` (${event.attendees.length})`
-                : ""}
-            </Text>
-            {event.attendees && event.attendees.length > 0 ? (
-              event.attendees.map((attendee, index) => (
-                <View key={index} style={modal.attendeeRow}>
-                  <View style={[modal.avatarDot, { backgroundColor: accentColor }]} />
-                  <Text style={modal.attendeeName}>{attendee}</Text>
+        {/* Attendees */}
+        <DetailSection icon="people-outline" iconColor="#7878A8">
+          <Text style={detail.sectionLabel}>
+            Attendees{event.attendees && event.attendees.length > 0 ? ` (${event.attendees.length})` : ""}
+          </Text>
+          {event.attendees && event.attendees.length > 0 ? (
+            event.attendees.map((a, i) => (
+              <View key={i} style={detail.attendeeRow}>
+                <View style={[detail.attendeeAvatar, { backgroundColor: `${accentColor}20` }]}>
+                  <Text style={[detail.attendeeInitial, { color: accentColor }]}>
+                    {a.charAt(0).toUpperCase()}
+                  </Text>
                 </View>
-              ))
-            ) : (
-              <Text style={modal.emptyValue}>—</Text>
-            )}
-          </View>
-        </View>
-
-        <View style={modal.divider} />
+                <Text style={detail.attendeeName}>{a}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={detail.emptyValue}>No attendees</Text>
+          )}
+        </DetailSection>
       </ScrollView>
     </View>
   );
 }
 
-// ─── Edit Modal ───────────────────────────────────────────────────────────────
+function DetailSection({
+  icon,
+  iconColor,
+  children,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  iconColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={detail.section}>
+      <Ionicons name={icon} size={18} color={iconColor} style={detail.sectionIcon} />
+      <View style={detail.sectionContent}>{children}</View>
+    </View>
+  );
+}
+
+// ─── Edit Modal ────────────────────────────────────────────────────────────────
 
 function EditModal({
   event,
@@ -360,7 +383,6 @@ function EditModal({
   getValidGoogleToken: () => Promise<string | null>;
   getValidMicrosoftToken: () => Promise<string | null>;
 }) {
-  // Parse existing event date/time for initial state
   const startD = new Date(event.start);
   const endD = new Date(event.end);
   const initDate = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, "0")}-${String(startD.getDate()).padStart(2, "0")}`;
@@ -369,17 +391,15 @@ function EditModal({
 
   const [title, setTitle] = useState(event.title);
   const [date, setDate] = useState(initDate);
-  const [startTime, setStartTime] = useState(event.isAllDay ? "" : initStartTime);
-  const [endTime, setEndTime] = useState(event.isAllDay ? "" : initEndTime);
+  const [startTime, setStartTime] = useState(event.isAllDay ? "00:00" : initStartTime);
+  const [endTime, setEndTime] = useState(event.isAllDay ? "23:59" : initEndTime);
   const [location, setLocation] = useState(event.location ?? "");
   const [description, setDescription] = useState(event.description ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Strip the g_ or m_ prefix to get the real API event ID
   const realEventId = event.id.replace(/^[gm]_/, "");
 
-  // Build device offset string e.g. "+05:30"
   const getDeviceOffset = (): string => {
     const totalMinutes = -new Date().getTimezoneOffset();
     const sign = totalMinutes >= 0 ? "+" : "-";
@@ -392,21 +412,14 @@ function EditModal({
       Alert.alert("Invalid time", "End time must be after start time.");
       return;
     }
-
     setIsSaving(true);
     const offset = getDeviceOffset();
     const newStartISO = `${date}T${startTime || "00:00"}:00${offset}`;
     const newEndISO = `${date}T${endTime || "23:59"}:00${offset}`;
 
-    // Build naive local time for Outlook
     const toNaive = (iso: string) => {
       const d = new Date(iso);
-      const Y = d.getFullYear();
-      const M = String(d.getMonth() + 1).padStart(2, "0");
-      const D = String(d.getDate()).padStart(2, "0");
-      const h = String(d.getHours()).padStart(2, "0");
-      const m = String(d.getMinutes()).padStart(2, "0");
-      return `${Y}-${M}-${D}T${h}:${m}:00`;
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:00`;
     };
 
     try {
@@ -421,7 +434,7 @@ function EditModal({
             endISO: newEndISO,
           });
         } else {
-          Alert.alert("Error", "Google session expired. Please sign in again.");
+          Alert.alert("Error", "Google session expired.");
         }
       } else {
         const token = await getValidMicrosoftToken();
@@ -434,10 +447,9 @@ function EditModal({
             endDateTime: toNaive(newEndISO),
           });
         } else {
-          Alert.alert("Error", "Microsoft session expired. Please sign in again.");
+          Alert.alert("Error", "Microsoft session expired.");
         }
       }
-
       onSave({
         ...event,
         title: title.trim() || event.title,
@@ -446,12 +458,9 @@ function EditModal({
         location: location.trim() || undefined,
         description: description.trim() || undefined,
       });
-      Alert.alert("✅ Saved", "Event updated on " + (event.source === "google" ? "Google Calendar" : "Outlook Calendar"));
+      Alert.alert("Saved", "Event updated successfully.");
     } catch (err: any) {
-      Alert.alert(
-        "Update failed",
-        err?.response?.data?.error?.message || err?.message || "Could not update event."
-      );
+      Alert.alert("Update failed", err?.response?.data?.error?.message || err?.message || "Could not update event.");
     } finally {
       setIsSaving(false);
     }
@@ -460,7 +469,7 @@ function EditModal({
   const handleDelete = () => {
     Alert.alert(
       "Delete Event",
-      `Are you sure you want to delete "${event.title}"? This will remove it from ${event.source === "google" ? "Google Calendar" : "Outlook Calendar"}.`,
+      `Delete "${event.title}" from ${event.source === "google" ? "Google Calendar" : "Outlook Calendar"}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -476,13 +485,10 @@ function EditModal({
                 const token = await getValidMicrosoftToken();
                 if (token) await deleteOutlookEvent(token, realEventId);
               }
-              Alert.alert("🗑️ Deleted", "Event removed.");
+              Alert.alert("Deleted", "Event removed.");
               onDeleted();
             } catch (err: any) {
-              Alert.alert(
-                "Delete failed",
-                err?.response?.data?.error?.message || err?.message || "Could not delete event."
-              );
+              Alert.alert("Delete failed", err?.response?.data?.error?.message || err?.message || "Could not delete event.");
             } finally {
               setIsDeleting(false);
             }
@@ -500,20 +506,22 @@ function EditModal({
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={[edit.header, { backgroundColor: accentColor }]}>
-        <View style={edit.headerTopRow}>
-          <TouchableOpacity onPress={onCancel} activeOpacity={0.7}>
-            <Text style={edit.cancelText}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={edit.headerTitle}>Edit Event</Text>
-          <TouchableOpacity onPress={handleSave} activeOpacity={0.7} disabled={isSaving}>
-            {isSaving ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={edit.saveText}>Save</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+      <View style={edit.header}>
+        <TouchableOpacity onPress={onCancel} style={edit.headerBtn}>
+          <Text style={edit.cancelText}>Cancel</Text>
+        </TouchableOpacity>
+        <Text style={edit.headerTitle}>Edit Event</Text>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={isSaving}
+          style={[edit.saveBtn, { backgroundColor: accentColor }]}
+        >
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={edit.saveBtnText}>Save</Text>
+          )}
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -522,88 +530,90 @@ function EditModal({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Title */}
-        <Text style={edit.fieldLabel}>Title</Text>
+        {/* Source badge */}
+        <View style={[edit.sourceBadge, { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30` }]}>
+          <View style={[edit.sourceDot, { backgroundColor: accentColor }]} />
+          <Text style={[edit.sourceLabel, { color: accentColor }]}>
+            {event.source === "google" ? "Google Calendar" : "Outlook Calendar"}
+          </Text>
+        </View>
+
+        <EditFieldLabel icon="text" label="Title" />
         <TextInput
           style={edit.input}
           value={title}
           onChangeText={setTitle}
           placeholder="Event title"
-          placeholderTextColor="#555570"
+          placeholderTextColor="#3A3A58"
           selectionColor={accentColor}
         />
 
-        {/* Date */}
-        <Text style={edit.fieldLabel}>Date</Text>
-        <TextInput
-          style={edit.input}
-          value={date}
-          onChangeText={setDate}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor="#555570"
-          selectionColor={accentColor}
-          keyboardType="numbers-and-punctuation"
-        />
+        <EditFieldLabel icon="calendar-outline" label="Date" />
+        <DatePickerField value={date} onChange={setDate} accentColor={accentColor} />
 
-        {/* Start / End Time */}
         {!event.isAllDay && (
-          <View style={edit.timeRow}>
-            <View style={edit.timeCol}>
-              <Text style={edit.fieldLabel}>Start Time</Text>
-              <TextInput
-                style={edit.input}
-                value={startTime}
-                onChangeText={setStartTime}
-                placeholder="HH:MM"
-                placeholderTextColor="#555570"
-                selectionColor={accentColor}
-                keyboardType="numbers-and-punctuation"
-              />
+          <>
+            <View style={edit.timeRow}>
+              <View style={edit.timeCol}>
+                <EditFieldLabel icon="play-circle-outline" label="Start time" />
+                <TimePickerField
+                  value={startTime}
+                  onChange={setStartTime}
+                  accentColor={accentColor}
+                />
+              </View>
+              <View style={edit.timeSepBox}>
+                <Ionicons name="arrow-forward" size={16} color="#3C3C5E" />
+              </View>
+              <View style={edit.timeCol}>
+                <EditFieldLabel icon="stop-circle-outline" label="End time" />
+                <TimePickerField
+                  value={endTime}
+                  onChange={setEndTime}
+                  accentColor={accentColor}
+                />
+              </View>
             </View>
-            <View style={edit.timeSep}>
-              <Text style={edit.timeSepText}>→</Text>
-            </View>
-            <View style={edit.timeCol}>
-              <Text style={edit.fieldLabel}>End Time</Text>
-              <TextInput
-                style={edit.input}
-                value={endTime}
-                onChangeText={setEndTime}
-                placeholder="HH:MM"
-                placeholderTextColor="#555570"
-                selectionColor={accentColor}
-                keyboardType="numbers-and-punctuation"
-              />
-            </View>
-          </View>
+
+            {startTime && endTime && startTime < endTime && (
+              <View style={edit.durationHint}>
+                <Ionicons
+                  name="hourglass-outline"
+                  size={12}
+                  color={accentColor}
+                  style={{ marginRight: 5 }}
+                />
+                <Text style={[edit.durationHintText, { color: accentColor }]}>
+                  {calcDuration(startTime, endTime)}
+                </Text>
+              </View>
+            )}
+          </>
         )}
 
-        {/* Location */}
-        <Text style={edit.fieldLabel}>Location</Text>
+        <EditFieldLabel icon="location-outline" label="Location" />
         <TextInput
           style={edit.input}
           value={location}
           onChangeText={setLocation}
           placeholder="Add location"
-          placeholderTextColor="#555570"
+          placeholderTextColor="#3A3A58"
           selectionColor={accentColor}
         />
 
-        {/* Description */}
-        <Text style={edit.fieldLabel}>Description</Text>
+        <EditFieldLabel icon="document-text-outline" label="Description" />
         <TextInput
           style={[edit.input, edit.multiline]}
           value={description}
           onChangeText={setDescription}
           placeholder="Add description"
-          placeholderTextColor="#555570"
+          placeholderTextColor="#3A3A58"
           multiline
-          numberOfLines={5}
+          numberOfLines={4}
           textAlignVertical="top"
           selectionColor={accentColor}
         />
 
-        {/* Delete button */}
         <TouchableOpacity
           style={edit.deleteBtn}
           onPress={handleDelete}
@@ -611,9 +621,12 @@ function EditModal({
           disabled={isDeleting}
         >
           {isDeleting ? (
-            <ActivityIndicator size="small" color="#FF5252" />
+            <ActivityIndicator size="small" color="#FF5C6A" />
           ) : (
-            <Text style={edit.deleteText}>🗑️ Delete Event</Text>
+            <>
+              <Ionicons name="trash-outline" size={16} color="#FF5C6A" style={{ marginRight: 8 }} />
+              <Text style={edit.deleteText}>Delete Event</Text>
+            </>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -621,215 +634,364 @@ function EditModal({
   );
 }
 
+function EditFieldLabel({
+  icon,
+  label,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  label: string;
+}) {
+  return (
+    <View style={editLabelStyles.row}>
+      <Ionicons name={icon} size={12} color="#4A4A6E" style={{ marginRight: 5 }} />
+      <Text style={editLabelStyles.text}>{label}</Text>
+    </View>
+  );
+}
+
+function calcDuration(start: string, end: string): string {
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const total = eh * 60 + em - (sh * 60 + sm);
+  if (total <= 0) return "";
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} hr`;
+  return `${h} hr ${m} min`;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDuration(start: Date, end: Date): string {
-  const totalMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
-  if (totalMinutes <= 0) return "";
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours === 0) return `${minutes} min`;
-  if (minutes === 0) return `${hours} hr`;
-  return `${hours} hr ${minutes} min`;
+  const total = Math.round((end.getTime() - start.getTime()) / 60000);
+  if (total <= 0) return "";
+  const hours = Math.floor(total / 60);
+  const mins = total % 60;
+  if (hours === 0) return `${mins} min`;
+  if (mins === 0) return `${hours} hr`;
+  return `${hours} hr ${mins} min`;
 }
 
 function formatHeader(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
+  container: { flex: 1, backgroundColor: "#0C0C16" },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 16,
-    marginBottom: 8,
-    marginHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 2,
+    marginHorizontal: 18,
   },
-  dateHeader: { color: "#fff", fontSize: 18, fontWeight: "700" },
-  refreshBtn: { padding: 8 },
-  refreshIcon: { fontSize: 20 },
-  emptyText: { color: "#888", textAlign: "center", marginTop: 32, fontSize: 15 },
-  errorText: { color: "#EF5350", textAlign: "center", marginTop: 32, fontSize: 15 },
-
-  // Floating Action Button
+  dateHeader: {
+    color: "#F0EEFF",
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  refreshBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "#141424",
+    borderWidth: 1,
+    borderColor: "#1E1E34",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  eventCountLabel: {
+    color: "#4A4A6E",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginHorizontal: 18,
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 80,
+    gap: 8,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#141424",
+    borderWidth: 1,
+    borderColor: "#1E1E34",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  emptyTitle: { color: "#EEEEFF", fontSize: 16, fontWeight: "700" },
+  emptyText: { color: "#4A4A6E", fontSize: 13 },
+  errorText: { color: "#FF5C6A", fontSize: 14, marginTop: 8, fontWeight: "500" },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     zIndex: 10,
   },
   fab: {
     position: "absolute",
-    bottom: 24,
     right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#6C63FF",
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "#7C6EFF",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 20,
-    elevation: 6,
-    shadowColor: "#6C63FF",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    elevation: 8,
+    shadowColor: "#7C6EFF",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
   },
-  fabIcon: { color: "#fff", fontSize: 28, lineHeight: 32, fontWeight: "300" },
   fabMenu: {
     position: "absolute",
-    bottom: 90,
-    right: 16,
+    right: 14,
     zIndex: 20,
     gap: 8,
   },
   fabOption: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E1E2E",
-    borderLeftWidth: 4,
-    borderRadius: 12,
+    backgroundColor: "#141424",
+    borderLeftWidth: 3,
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    minWidth: 190,
-    elevation: 4,
+    paddingVertical: 13,
+    minWidth: 200,
+    borderWidth: 1,
+    borderColor: "#1E1E34",
+    elevation: 6,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowRadius: 8,
   },
-  fabOptionIcon: { fontSize: 18, marginRight: 10 },
-  fabOptionLabel: { color: "#ECECEC", fontSize: 14, fontWeight: "600" },
+  fabOptionDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  fabOptionDotInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  fabOptionLabel: { color: "#EEEEFF", fontSize: 14, fontWeight: "600" },
 });
 
-const modal = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  banner: { paddingTop: 52, paddingBottom: 24, paddingHorizontal: 20 },
+const detail = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#0C0C16" },
+  banner: {
+    paddingTop: 52,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#111120",
+    borderBottomWidth: 1,
+  },
   bannerTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  closeBtn: { padding: 4 },
-  closeText: { fontSize: 15, color: "#fff", fontWeight: "600" },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#1A1A2C",
+    borderWidth: 1,
+    borderColor: "#242438",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   editBtn: {
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingVertical: 7,
+    borderWidth: 1,
   },
-  editBtnText: { fontSize: 13, color: "#fff", fontWeight: "700" },
-  bannerTitle: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "800",
-    lineHeight: 32,
-    marginBottom: 12,
-  },
-  sourceBadge: {
+  editBtnText: { fontSize: 13, fontWeight: "700" },
+  sourcePill: {
+    flexDirection: "row",
+    alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.2)",
     borderRadius: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 4,
+    marginBottom: 12,
+    borderWidth: 1,
+    gap: 6,
   },
-  sourceBadgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  body: { flex: 1, paddingTop: 8 },
+  sourceDot: { width: 6, height: 6, borderRadius: 3 },
+  sourcePillText: { fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
+  bannerTitle: {
+    color: "#F0EEFF",
+    fontSize: 22,
+    fontWeight: "800",
+    lineHeight: 30,
+    letterSpacing: -0.3,
+  },
+  body: { flex: 1 },
   section: {
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 16,
     alignItems: "flex-start",
   },
-  sectionIcon: { fontSize: 22, marginRight: 14, marginTop: 2 },
+  sectionIcon: { marginRight: 14, marginTop: 2 },
   sectionContent: { flex: 1 },
   sectionLabel: {
-    color: "#6C6C8A",
+    color: "#4A4A6E",
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 5,
+    marginTop: 10,
+  },
+  sectionValue: { color: "#EEEEFF", fontSize: 15, fontWeight: "500" },
+  emptyValue: { color: "#2E2E4A", fontSize: 15, fontStyle: "italic" },
+  durationPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(124,110,255,0.1)",
+    alignSelf: "flex-start",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "rgba(124,110,255,0.2)",
+  },
+  durationText: { color: "#7C6EFF", fontSize: 12, fontWeight: "600" },
+  descText: { color: "#A8A8C8", fontSize: 14, lineHeight: 22 },
+  attendeeRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  attendeeAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  attendeeInitial: { fontSize: 13, fontWeight: "700" },
+  attendeeName: { color: "#EEEEFF", fontSize: 14 },
+  divider: { height: 1, backgroundColor: "#141424", marginHorizontal: 20 },
+});
+
+const editLabelStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  text: {
+    color: "#5A5A7E",
     fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 4,
-    marginTop: 8,
+    letterSpacing: 0.9,
   },
-  sectionValue: { color: "#ECECEC", fontSize: 15, fontWeight: "500" },
-  emptyValue: { color: "#44445A", fontSize: 15, fontStyle: "italic" },
-  duration: { color: "#9E9EC8", fontSize: 13, marginTop: 6 },
-  descriptionText: { color: "#C0C0D8", fontSize: 14, lineHeight: 22 },
-  attendeeRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
-  avatarDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
-  attendeeName: { color: "#ECECEC", fontSize: 14 },
-  divider: { height: 1, backgroundColor: "#2A2A3E", marginHorizontal: 20 },
 });
 
 const edit = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
-  header: { paddingTop: 52, paddingBottom: 20, paddingHorizontal: 20 },
-  headerTopRow: {
+  container: { flex: 1, backgroundColor: "#0C0C16" },
+  header: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
+    paddingTop: 52,
+    paddingBottom: 18,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1A1A2E",
+    backgroundColor: "#111120",
+  },
+  headerBtn: { minWidth: 60 },
+  cancelText: { color: "#7878A8", fontSize: 15, fontWeight: "500" },
+  headerTitle: { color: "#F0EEFF", fontSize: 17, fontWeight: "700" },
+  saveBtn: {
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    minWidth: 60,
     alignItems: "center",
   },
-  headerTitle: { color: "#fff", fontSize: 17, fontWeight: "700" },
-  cancelText: { color: "rgba(255,255,255,0.8)", fontSize: 15, fontWeight: "500" },
-  saveText: { color: "#fff", fontSize: 15, fontWeight: "800" },
-  body: { flex: 1, paddingHorizontal: 20, paddingTop: 24 },
-  fieldLabel: {
-    color: "#6C6C8A",
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 8,
-    marginTop: 20,
-  },
-  input: {
-    backgroundColor: "#1E1E2E",
+  saveBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  body: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+  sourceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
     borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 16,
+    marginBottom: 4,
+    borderWidth: 1,
+    gap: 6,
+  },
+  sourceDot: { width: 6, height: 6, borderRadius: 3 },
+  sourceLabel: { fontSize: 12, fontWeight: "700" },
+  input: {
+    backgroundColor: "#141424",
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: "#ECECEC",
+    paddingVertical: 13,
+    color: "#EEEEFF",
     fontSize: 15,
     borderWidth: 1,
-    borderColor: "#2A2A3E",
+    borderColor: "#1E1E34",
   },
-  multiline: {
-    minHeight: 120,
-    paddingTop: 12,
+  multiline: { minHeight: 110, paddingTop: 12 },
+  timeRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
+  timeCol: { flex: 1 },
+  timeSepBox: { paddingBottom: 14, paddingHorizontal: 2 },
+  durationHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    marginLeft: 2,
   },
-  note: {
-    color: "#555570",
+  durationHintText: {
     fontSize: 12,
-    marginTop: 28,
-    lineHeight: 18,
-    textAlign: "center",
-    paddingHorizontal: 10,
+    fontWeight: "600",
   },
   deleteBtn: {
-    marginTop: 32,
-    backgroundColor: "#3A1515",
-    borderRadius: 12,
-    paddingVertical: 14,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    marginTop: 32,
+    backgroundColor: "rgba(255,92,106,0.08)",
+    borderRadius: 14,
+    paddingVertical: 15,
     borderWidth: 1,
-    borderColor: "#5E2A2A",
+    borderColor: "rgba(255,92,106,0.2)",
   },
   deleteText: {
-    color: "#FF5252",
+    color: "#FF5C6A",
     fontSize: 15,
     fontWeight: "700",
   },
-  timeRow: { flexDirection: "row" as const, alignItems: "flex-end" as const, gap: 8 },
-  timeCol: { flex: 1 },
-  timeSep: { marginBottom: 12, paddingHorizontal: 4 },
-  timeSepText: { color: "#6C6C8A", fontSize: 18 },
 });

@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { UnifiedEvent } from "../types/event";
 
 interface Props {
@@ -8,37 +9,56 @@ interface Props {
 }
 
 export default function EventCard({ event, onPress }: Props) {
-  const borderColor = event.source === "google" ? "#4285F4" : "#00A4EF";
-  const sourceLabel = event.source === "google" ? "Google" : "Outlook";
+  const isGoogle = event.source === "google";
+  const accentColor = isGoogle ? "#4285F4" : "#2884E0";
   const startTime = formatTime(event.start);
   const endTime = formatTime(event.end);
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={onPress ? 0.75 : 1}
-      style={[styles.card, { borderLeftColor: borderColor }]}
+      activeOpacity={onPress ? 0.72 : 1}
+      style={styles.card}
     >
-      <View style={styles.header}>
-        <Text style={styles.title} numberOfLines={1}>
-          {event.title}
-        </Text>
-        <View style={[styles.badge, { backgroundColor: borderColor }]}>
-          <Text style={styles.badgeText}>{sourceLabel}</Text>
+      {/* Colored left accent bar */}
+      <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
+
+      <View style={styles.body}>
+        {/* Top row: title + source badge */}
+        <View style={styles.topRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {event.title}
+          </Text>
+          <View style={[styles.sourceBadge, { backgroundColor: `${accentColor}20` }]}>
+            <Text style={[styles.sourceText, { color: accentColor }]}>
+              {isGoogle ? "Google" : "Outlook"}
+            </Text>
+          </View>
         </View>
+
+        {/* Time row */}
+        <View style={styles.metaRow}>
+          <Ionicons name="time-outline" size={13} color="#5C5C80" style={{ marginRight: 5 }} />
+          <Text style={styles.timeText}>
+            {event.isAllDay ? "All day" : `${startTime} — ${endTime}`}
+          </Text>
+        </View>
+
+        {/* Location row */}
+        {event.location ? (
+          <View style={styles.metaRow}>
+            <Ionicons name="location-outline" size={13} color="#5C5C80" style={{ marginRight: 5 }} />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {event.location}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
-      <Text style={styles.time}>
-        {event.isAllDay ? "All day" : `${startTime} — ${endTime}`}
-      </Text>
-
-      {event.location ? (
-        <Text style={styles.location} numberOfLines={1}>
-          📍 {event.location}
-        </Text>
-      ) : null}
-
-      {onPress && <Text style={styles.tapHint}>Tap for details →</Text>}
+      {/* Chevron */}
+      {onPress && (
+        <Ionicons name="chevron-forward" size={16} color="#3C3C5E" style={styles.chevron} />
+      )}
     </TouchableOpacity>
   );
 }
@@ -50,55 +70,70 @@ function formatTime(iso: string): string {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#1E1E2E",
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    padding: 14,
-    marginVertical: 6,
-    marginHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#141424",
+    borderRadius: 14,
+    marginVertical: 5,
+    marginHorizontal: 14,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#1E1E32",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
     elevation: 3,
   },
-  header: {
+  accentBar: {
+    width: 3,
+    alignSelf: "stretch",
+  },
+  body: {
+    flex: 1,
+    paddingVertical: 13,
+    paddingHorizontal: 13,
+    gap: 5,
+  },
+  topRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
+    justifyContent: "space-between",
+    marginBottom: 2,
   },
   title: {
-    color: "#ECECEC",
-    fontSize: 16,
+    color: "#EEEEFF",
+    fontSize: 15,
     fontWeight: "600",
     flex: 1,
     marginRight: 8,
+    letterSpacing: -0.1,
   },
-  badge: {
+  sourceBadge: {
     borderRadius: 6,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
-  badgeText: {
-    color: "#fff",
-    fontSize: 11,
+  sourceText: {
+    fontSize: 10,
     fontWeight: "700",
+    letterSpacing: 0.3,
   },
-  time: {
-    color: "#A0A0B8",
-    fontSize: 13,
-    marginTop: 2,
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  location: {
-    color: "#A0A0B8",
+  timeText: {
+    color: "#7878A8",
     fontSize: 12,
-    marginTop: 4,
+    fontWeight: "500",
   },
-  tapHint: {
-    color: "#5555AA",
-    fontSize: 11,
-    marginTop: 6,
-    fontStyle: "italic",
+  locationText: {
+    color: "#7878A8",
+    fontSize: 12,
+    flex: 1,
+  },
+  chevron: {
+    marginRight: 12,
   },
 });
