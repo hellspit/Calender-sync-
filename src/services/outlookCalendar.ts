@@ -119,3 +119,42 @@ export async function createOutlookEvent(
   }
 }
 
+/**
+ * Update an event on the user's primary Outlook Calendar.
+ * Uses PATCH so only provided fields are changed.
+ */
+export async function updateOutlookEvent(
+  token: string,
+  eventId: string,
+  updates: { title?: string; location?: string; description?: string; startDateTime?: string; endDateTime?: string; timeZone?: string }
+): Promise<any> {
+  const tz = updates.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const body: any = {};
+  if (updates.title !== undefined) body.subject = updates.title;
+  if (updates.location !== undefined) body.location = { displayName: updates.location };
+  if (updates.description !== undefined)
+    body.body = { contentType: "Text", content: updates.description };
+  if (updates.startDateTime !== undefined) body.start = { dateTime: updates.startDateTime, timeZone: tz };
+  if (updates.endDateTime !== undefined) body.end = { dateTime: updates.endDateTime, timeZone: tz };
+
+  const response = await axios.patch(`${BASE_URL}/me/events/${eventId}`, body, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  return response.data;
+}
+
+/**
+ * Delete an event from the user's primary Outlook Calendar.
+ */
+export async function deleteOutlookEvent(
+  token: string,
+  eventId: string
+): Promise<void> {
+  await axios.delete(`${BASE_URL}/me/events/${eventId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

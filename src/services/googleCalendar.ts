@@ -75,3 +75,39 @@ export async function createGoogleEvent(
   return response.data;
 }
 
+/**
+ * Update an event on the user's primary Google Calendar.
+ * Uses PATCH so only provided fields are changed.
+ */
+export async function updateGoogleEvent(
+  token: string,
+  eventId: string,
+  updates: { title?: string; location?: string; description?: string; startISO?: string; endISO?: string }
+): Promise<any> {
+  const body: any = {};
+  if (updates.title !== undefined) body.summary = updates.title;
+  if (updates.location !== undefined) body.location = updates.location;
+  if (updates.description !== undefined) body.description = updates.description;
+  if (updates.startISO !== undefined) body.start = { dateTime: updates.startISO };
+  if (updates.endISO !== undefined) body.end = { dateTime: updates.endISO };
+
+  const response = await axios.patch(
+    `${BASE_URL}/calendars/primary/events/${eventId}`,
+    body,
+    { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+  );
+
+  return response.data;
+}
+
+/**
+ * Delete an event from the user's primary Google Calendar.
+ */
+export async function deleteGoogleEvent(
+  token: string,
+  eventId: string
+): Promise<void> {
+  await axios.delete(`${BASE_URL}/calendars/primary/events/${eventId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

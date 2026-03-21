@@ -12,12 +12,16 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import CalendarView from "../components/CalendarView";
 import EventCard from "../components/EventCard";
 import { useCalendarEvents } from "../hooks/useCalendarEvents";
 import { UnifiedEvent } from "../types/event";
 import AddEventModal, { AddTarget } from "../components/AddEventModal";
+import { useAuth } from "../auth/AuthContext";
+import { updateGoogleEvent, deleteGoogleEvent } from "../services/googleCalendar";
+import { updateOutlookEvent, deleteOutlookEvent } from "../services/outlookCalendar";
 
 export default function CalendarScreen() {
   const today = new Date().toISOString().substring(0, 10);
@@ -26,9 +30,16 @@ export default function CalendarScreen() {
   const [showFabMenu, setShowFabMenu] = useState(false);
   const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
   const { data, isLoading, error, refetch, isFetching } = useCalendarEvents(selectedDate);
+  const { getValidGoogleToken, getValidMicrosoftToken } = useAuth();
 
   const handleEventUpdate = (updated: UnifiedEvent) => {
     setSelectedEvent(updated);
+    refetch();
+  };
+
+  const handleEventDeleted = () => {
+    setSelectedEvent(null);
+    refetch();
   };
 
   const openAddModal = (target: AddTarget) => {
@@ -92,6 +103,9 @@ export default function CalendarScreen() {
             event={selectedEvent}
             onClose={() => setSelectedEvent(null)}
             onUpdate={handleEventUpdate}
+            onDeleted={handleEventDeleted}
+            getValidGoogleToken={getValidGoogleToken}
+            getValidMicrosoftToken={getValidMicrosoftToken}
           />
         )}
       </Modal>
@@ -163,11 +177,17 @@ export default function CalendarScreen() {
 function EventDetailModal({
   event,
   onClose,
+  onDeleted,
   onUpdate,
+  getValidGoogleToken,
+  getValidMicrosoftToken,
 }: {
   event: UnifiedEvent;
   onClose: () => void;
+  onDeleted: () => void;
   onUpdate: (updated: UnifiedEvent) => void;
+  getValidGoogleToken: () => Promise<string | null>;
+  getValidMicrosoftToken: () => Promise<string | null>;
 }) {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -200,11 +220,14 @@ function EventDetailModal({
       <EditModal
         event={event}
         accentColor={accentColor}
+        getValidGoogleToken={getValidGoogleToken}
+        getValidMicrosoftToken={getValidMicrosoftToken}
         onCancel={() => setIsEditing(false)}
         onSave={(updated) => {
           onUpdate(updated);
           setIsEditing(false);
         }}
+        onDeleted={onDeleted}
       />
     );
   }
@@ -325,23 +348,148 @@ function EditModal({
   accentColor,
   onCancel,
   onSave,
+  onDeleted,
+  getValidGoogleToken,
+  getValidMicrosoftToken,
 }: {
   event: UnifiedEvent;
   accentColor: string;
   onCancel: () => void;
   onSave: (updated: UnifiedEvent) => void;
+  onDeleted: () => void;
+  getValidGoogleToken: () => Promise<string | null>;
+  getValidMicrosoftToken: () => Promise<string | null>;
 }) {
+  // Parse existing event date/time for initial state
+  const startD = new Date(event.start);
+  const endD = new Date(event.end);
+  const initDate = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, "0")}-${String(startD.getDate()).padStart(2, "0")}`;
+  const initStartTime = `${String(startD.getHours()).padStart(2, "0")}:${String(startD.getMinutes()).padStart(2, "0")}`;
+  const initEndTime = `${String(endD.getHours()).padStart(2, "0")}:${String(endD.getMinutes()).padStart(2, "0")}`;
+
   const [title, setTitle] = useState(event.title);
+  const [date, setDate] = useState(initDate);
+  const [startTime, setStartTime] = useState(event.isAllDay ? "" : initStartTime);
+  const [endTime, setEndTime] = useState(event.isAllDay ? "" : initEndTime);
   const [location, setLocation] = useState(event.location ?? "");
   const [description, setDescription] = useState(event.description ?? "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleSave = () => {
-    onSave({
-      ...event,
-      title: title.trim() || event.title,
-      location: location.trim() || undefined,
-      description: description.trim() || undefined,
-    });
+  // Strip the g_ or m_ prefix to get the real API event ID
+  const realEventId = event.id.replace(/^[gm]_/, "");
+
+  // Build device offset string e.g. "+05:30"
+  const getDeviceOffset = (): string => {
+    const totalMinutes = -new Date().getTimezoneOffset();
+    const sign = totalMinutes >= 0 ? "+" : "-";
+    const abs = Math.abs(totalMinutes);
+    return `${sign}${String(Math.floor(abs / 60)).padStart(2, "0")}:${String(abs % 60).padStart(2, "0")}`;
+  };
+
+  const handleSave = async () => {
+    if (!event.isAllDay && startTime >= endTime) {
+      Alert.alert("Invalid time", "End time must be after start time.");
+      return;
+    }
+
+    setIsSaving(true);
+    const offset = getDeviceOffset();
+    const newStartISO = `${date}T${startTime || "00:00"}:00${offset}`;
+    const newEndISO = `${date}T${endTime || "23:59"}:00${offset}`;
+
+    // Build naive local time for Outlook
+    const toNaive = (iso: string) => {
+      const d = new Date(iso);
+      const Y = d.getFullYear();
+      const M = String(d.getMonth() + 1).padStart(2, "0");
+      const D = String(d.getDate()).padStart(2, "0");
+      const h = String(d.getHours()).padStart(2, "0");
+      const m = String(d.getMinutes()).padStart(2, "0");
+      return `${Y}-${M}-${D}T${h}:${m}:00`;
+    };
+
+    try {
+      if (event.source === "google") {
+        const token = await getValidGoogleToken();
+        if (token) {
+          await updateGoogleEvent(token, realEventId, {
+            title: title.trim() || event.title,
+            location: location.trim() || "",
+            description: description.trim() || "",
+            startISO: newStartISO,
+            endISO: newEndISO,
+          });
+        } else {
+          Alert.alert("Error", "Google session expired. Please sign in again.");
+        }
+      } else {
+        const token = await getValidMicrosoftToken();
+        if (token) {
+          await updateOutlookEvent(token, realEventId, {
+            title: title.trim() || event.title,
+            location: location.trim() || "",
+            description: description.trim() || "",
+            startDateTime: toNaive(newStartISO),
+            endDateTime: toNaive(newEndISO),
+          });
+        } else {
+          Alert.alert("Error", "Microsoft session expired. Please sign in again.");
+        }
+      }
+
+      onSave({
+        ...event,
+        title: title.trim() || event.title,
+        start: newStartISO,
+        end: newEndISO,
+        location: location.trim() || undefined,
+        description: description.trim() || undefined,
+      });
+      Alert.alert("✅ Saved", "Event updated on " + (event.source === "google" ? "Google Calendar" : "Outlook Calendar"));
+    } catch (err: any) {
+      Alert.alert(
+        "Update failed",
+        err?.response?.data?.error?.message || err?.message || "Could not update event."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Event",
+      `Are you sure you want to delete "${event.title}"? This will remove it from ${event.source === "google" ? "Google Calendar" : "Outlook Calendar"}.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              if (event.source === "google") {
+                const token = await getValidGoogleToken();
+                if (token) await deleteGoogleEvent(token, realEventId);
+              } else {
+                const token = await getValidMicrosoftToken();
+                if (token) await deleteOutlookEvent(token, realEventId);
+              }
+              Alert.alert("🗑️ Deleted", "Event removed.");
+              onDeleted();
+            } catch (err: any) {
+              Alert.alert(
+                "Delete failed",
+                err?.response?.data?.error?.message || err?.message || "Could not delete event."
+              );
+            } finally {
+              setIsDeleting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -358,8 +506,12 @@ function EditModal({
             <Text style={edit.cancelText}>Cancel</Text>
           </TouchableOpacity>
           <Text style={edit.headerTitle}>Edit Event</Text>
-          <TouchableOpacity onPress={handleSave} activeOpacity={0.7}>
-            <Text style={edit.saveText}>Save</Text>
+          <TouchableOpacity onPress={handleSave} activeOpacity={0.7} disabled={isSaving}>
+            {isSaving ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={edit.saveText}>Save</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -380,6 +532,51 @@ function EditModal({
           placeholderTextColor="#555570"
           selectionColor={accentColor}
         />
+
+        {/* Date */}
+        <Text style={edit.fieldLabel}>Date</Text>
+        <TextInput
+          style={edit.input}
+          value={date}
+          onChangeText={setDate}
+          placeholder="YYYY-MM-DD"
+          placeholderTextColor="#555570"
+          selectionColor={accentColor}
+          keyboardType="numbers-and-punctuation"
+        />
+
+        {/* Start / End Time */}
+        {!event.isAllDay && (
+          <View style={edit.timeRow}>
+            <View style={edit.timeCol}>
+              <Text style={edit.fieldLabel}>Start Time</Text>
+              <TextInput
+                style={edit.input}
+                value={startTime}
+                onChangeText={setStartTime}
+                placeholder="HH:MM"
+                placeholderTextColor="#555570"
+                selectionColor={accentColor}
+                keyboardType="numbers-and-punctuation"
+              />
+            </View>
+            <View style={edit.timeSep}>
+              <Text style={edit.timeSepText}>→</Text>
+            </View>
+            <View style={edit.timeCol}>
+              <Text style={edit.fieldLabel}>End Time</Text>
+              <TextInput
+                style={edit.input}
+                value={endTime}
+                onChangeText={setEndTime}
+                placeholder="HH:MM"
+                placeholderTextColor="#555570"
+                selectionColor={accentColor}
+                keyboardType="numbers-and-punctuation"
+              />
+            </View>
+          </View>
+        )}
 
         {/* Location */}
         <Text style={edit.fieldLabel}>Location</Text>
@@ -406,9 +603,19 @@ function EditModal({
           selectionColor={accentColor}
         />
 
-        <Text style={edit.note}>
-          ℹ️ Changes are saved locally. To sync with Google / Outlook, edit from the original calendar app.
-        </Text>
+        {/* Delete button */}
+        <TouchableOpacity
+          style={edit.deleteBtn}
+          onPress={handleDelete}
+          activeOpacity={0.8}
+          disabled={isDeleting}
+        >
+          {isDeleting ? (
+            <ActivityIndicator size="small" color="#FF5252" />
+          ) : (
+            <Text style={edit.deleteText}>🗑️ Delete Event</Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -607,4 +814,22 @@ const edit = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 10,
   },
+  deleteBtn: {
+    marginTop: 32,
+    backgroundColor: "#3A1515",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#5E2A2A",
+  },
+  deleteText: {
+    color: "#FF5252",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  timeRow: { flexDirection: "row" as const, alignItems: "flex-end" as const, gap: 8 },
+  timeCol: { flex: 1 },
+  timeSep: { marginBottom: 12, paddingHorizontal: 4 },
+  timeSepText: { color: "#6C6C8A", fontSize: 18 },
 });
