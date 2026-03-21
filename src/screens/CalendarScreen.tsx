@@ -17,16 +17,23 @@ import CalendarView from "../components/CalendarView";
 import EventCard from "../components/EventCard";
 import { useCalendarEvents } from "../hooks/useCalendarEvents";
 import { UnifiedEvent } from "../types/event";
+import AddEventModal, { AddTarget } from "../components/AddEventModal";
 
 export default function CalendarScreen() {
   const today = new Date().toISOString().substring(0, 10);
   const [selectedDate, setSelectedDate] = useState(today);
   const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null);
+  const [showFabMenu, setShowFabMenu] = useState(false);
+  const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
   const { data, isLoading, error, refetch, isFetching } = useCalendarEvents(selectedDate);
 
-  // When user saves edits, update the selectedEvent in-place
   const handleEventUpdate = (updated: UnifiedEvent) => {
     setSelectedEvent(updated);
+  };
+
+  const openAddModal = (target: AddTarget) => {
+    setShowFabMenu(false);
+    setAddTarget(target);
   };
 
   return (
@@ -88,6 +95,65 @@ export default function CalendarScreen() {
           />
         )}
       </Modal>
+
+      {/* FAB menu backdrop */}
+      {showFabMenu && (
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => setShowFabMenu(false)}
+        />
+      )}
+
+      {/* FAB option menu */}
+      {showFabMenu && (
+        <View style={styles.fabMenu}>
+          <TouchableOpacity
+            style={[styles.fabOption, { borderLeftColor: "#4285F4" }]}
+            onPress={() => openAddModal("google")}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.fabOptionIcon}>🔵</Text>
+            <Text style={styles.fabOptionLabel}>Add to Google</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.fabOption, { borderLeftColor: "#00A4EF" }]}
+            onPress={() => openAddModal("microsoft")}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.fabOptionIcon}>🔷</Text>
+            <Text style={styles.fabOptionLabel}>Add to Microsoft</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.fabOption, { borderLeftColor: "#6C63FF" }]}
+            onPress={() => openAddModal("both")}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.fabOptionIcon}>📅</Text>
+            <Text style={styles.fabOptionLabel}>Add to Both</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Floating + button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setShowFabMenu(!showFabMenu)}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.fabIcon}>{showFabMenu ? "✕" : "+"}</Text>
+      </TouchableOpacity>
+
+      {/* Add Event Modal */}
+      {addTarget && (
+        <AddEventModal
+          visible={addTarget !== null}
+          target={addTarget}
+          initialDate={selectedDate}
+          onClose={() => setAddTarget(null)}
+          onSuccess={() => refetch()}
+        />
+      )}
     </View>
   );
 }
@@ -386,6 +452,55 @@ const styles = StyleSheet.create({
   refreshIcon: { fontSize: 20 },
   emptyText: { color: "#888", textAlign: "center", marginTop: 32, fontSize: 15 },
   errorText: { color: "#EF5350", textAlign: "center", marginTop: 32, fontSize: 15 },
+
+  // Floating Action Button
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    zIndex: 10,
+  },
+  fab: {
+    position: "absolute",
+    bottom: 24,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#6C63FF",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 20,
+    elevation: 6,
+    shadowColor: "#6C63FF",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+  },
+  fabIcon: { color: "#fff", fontSize: 28, lineHeight: 32, fontWeight: "300" },
+  fabMenu: {
+    position: "absolute",
+    bottom: 90,
+    right: 16,
+    zIndex: 20,
+    gap: 8,
+  },
+  fabOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E1E2E",
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minWidth: 190,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  fabOptionIcon: { fontSize: 18, marginRight: 10 },
+  fabOptionLabel: { color: "#ECECEC", fontSize: 14, fontWeight: "600" },
 });
 
 const modal = StyleSheet.create({

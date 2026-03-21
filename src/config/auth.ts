@@ -4,13 +4,13 @@
 export const GOOGLE_CONFIG = {
   clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? "",
   clientSecret: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_SECRET ?? "",
-  scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+  scopes: ["https://www.googleapis.com/auth/calendar.events"],
 };
 
 export const MICROSOFT_CONFIG = {
   clientId: process.env.EXPO_PUBLIC_MICROSOFT_CLIENT_ID ?? "",
   clientSecret: process.env.EXPO_PUBLIC_MICROSOFT_CLIENT_SECRET ?? "",
-  scopes: ["Calendars.Read"],
+  scopes: ["Calendars.ReadWrite"],
   tenantId: process.env.EXPO_PUBLIC_MICROSOFT_TENANT_ID ?? "",
 };
 
