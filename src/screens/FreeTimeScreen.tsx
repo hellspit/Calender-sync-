@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,17 +6,23 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FreeSlotCard from "../components/FreeSlotCard";
+import AddEventModal, { AddTarget } from "../components/AddEventModal";
 import { useCalendarEvents } from "../hooks/useCalendarEvents";
+import { FreeSlot } from "../types/event";
 
 export default function FreeTimeScreen() {
   const insets = useSafeAreaInsets();
   const today = new Date().toISOString().substring(0, 10);
-  const [selectedDate] = useState(today);
+  const [selectedDate, setSelectedDate] = useState(today);
   const { data, isLoading, error, refetch, isFetching } = useCalendarEvents(selectedDate);
+
+  // "Book this slot" state
+  const [bookSlot, setBookSlot] = useState<FreeSlot | null>(null);
 
   const totalFreeMinutes = data?.freeSlots.reduce((sum, s) => sum + s.durationMinutes, 0) ?? 0;
   const totalHours = Math.floor(totalFreeMinutes / 60);
@@ -30,13 +36,41 @@ export default function FreeTimeScreen() {
         : `${totalHours}h`
       : `${totalMins}m`;
 
+  const goToPrevDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d.toISOString().substring(0, 10));
+  };
+
+  const goToNextDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d.toISOString().substring(0, 10));
+  };
+
+  const goToToday = () => setSelectedDate(today);
+  const isToday = selectedDate === today;
+
+  const onRefresh = useCallback(() => { refetch(); }, [refetch]);
+
+  const handleBookSlot = (slot: FreeSlot) => {
+    setBookSlot(slot);
+  };
+
+  // Extract start time as HH:MM from the slot's ISO string
+  const slotStartTime = bookSlot
+    ? (() => { const d = new Date(bookSlot.start); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; })()
+    : "10:00";
+  const slotEndTime = bookSlot
+    ? (() => { const d = new Date(bookSlot.end); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; })()
+    : "11:00";
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Free Time</Text>
-          <Text style={styles.subtitle}>{formatHeader(selectedDate)}</Text>
         </View>
         <TouchableOpacity onPress={() => refetch()} style={styles.refreshBtn} activeOpacity={0.7}>
           {isFetching ? (
@@ -44,6 +78,20 @@ export default function FreeTimeScreen() {
           ) : (
             <Ionicons name="refresh-outline" size={20} color="#7878A8" />
           )}
+        </TouchableOpacity>
+      </View>
+
+      {/* Date navigation */}
+      <View style={styles.dateNav}>
+        <TouchableOpacity onPress={goToPrevDay} style={styles.navArrow} activeOpacity={0.7}>
+          <Ionicons name="chevron-back" size={22} color="#7C6EFF" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={goToToday} activeOpacity={0.8}>
+          <Text style={styles.dateLabel}>{formatHeader(selectedDate)}</Text>
+          {!isToday && <Text style={styles.todayHint}>Tap for today</Text>}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={goToNextDay} style={styles.navArrow} activeOpacity={0.7}>
+          <Ionicons name="chevron-forward" size={22} color="#7C6EFF" />
         </TouchableOpacity>
       </View>
 
@@ -86,11 +134,24 @@ export default function FreeTimeScreen() {
         <FlatList
           data={data.freeSlots}
           keyExtractor={(_, i) => `slot-${i}`}
-          renderItem={({ item }) => <FreeSlotCard slot={item} />}
+          renderItem={({ item }) => (
+            <FreeSlotCard slot={item} onBook={() => handleBookSlot(item)} />
+          )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 110, paddingTop: 4 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isFetching}
+              onRefresh={onRefresh}
+              tintColor="#00D9A5"
+              colors={["#00D9A5"]}
+              progressBackgroundColor="#141424"
+            />
+          }
           ListHeaderComponent={
-            <Text style={styles.listHeader}>Available windows today</Text>
+            <Text style={styles.listHeader}>
+              Available windows {isToday ? "today" : formatShort(selectedDate)}
+            </Text>
           }
         />
       ) : (
@@ -99,8 +160,23 @@ export default function FreeTimeScreen() {
             <Ionicons name="calendar-outline" size={32} color="#3C3C5E" />
           </View>
           <Text style={styles.emptyTitle}>Fully packed</Text>
-          <Text style={styles.emptyText}>No free windows found for today</Text>
+          <Text style={styles.emptyText}>
+            No free windows found for {isToday ? "today" : formatShort(selectedDate)}
+          </Text>
         </View>
+      )}
+
+      {/* Book slot modal */}
+      {bookSlot && (
+        <AddEventModal
+          visible={bookSlot !== null}
+          target={"both" as AddTarget}
+          initialDate={selectedDate}
+          initialStartTime={slotStartTime}
+          initialEndTime={slotEndTime}
+          onClose={() => setBookSlot(null)}
+          onSuccess={() => refetch()}
+        />
       )}
     </View>
   );
@@ -109,6 +185,11 @@ export default function FreeTimeScreen() {
 function formatHeader(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+}
+
+function formatShort(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 const styles = StyleSheet.create({
@@ -122,19 +203,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 16,
+    paddingBottom: 8,
   },
   title: {
     color: "#F0EEFF",
     fontSize: 26,
     fontWeight: "800",
     letterSpacing: -0.5,
-  },
-  subtitle: {
-    color: "#5A5A7A",
-    fontSize: 13,
-    marginTop: 3,
-    fontWeight: "500",
   },
   refreshBtn: {
     width: 38,
@@ -146,6 +221,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  // Date navigation
+  dateNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginHorizontal: 14,
+    marginBottom: 8,
+    backgroundColor: "#111120",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#1A1A2E",
+  },
+  navArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#1A1A2E",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dateLabel: {
+    color: "#D8D8F0",
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  todayHint: {
+    color: "#7C6EFF",
+    fontSize: 11,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 2,
+  },
+  // Summary card
   summaryCard: {
     flexDirection: "row",
     alignItems: "center",

@@ -25,6 +25,8 @@ interface Props {
   visible: boolean;
   target: AddTarget;
   initialDate: string;
+  initialStartTime?: string;
+  initialEndTime?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -33,6 +35,8 @@ export default function AddEventModal({
   visible,
   target,
   initialDate,
+  initialStartTime = "10:00",
+  initialEndTime = "11:00",
   onClose,
   onSuccess,
 }: Props) {
@@ -40,8 +44,8 @@ export default function AddEventModal({
 
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(initialDate);
-  const [startTime, setStartTime] = useState("10:00");
-  const [endTime, setEndTime] = useState("11:00");
+  const [startTime, setStartTime] = useState(initialStartTime);
+  const [endTime, setEndTime] = useState(initialEndTime);
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [isAllDay, setIsAllDay] = useState(false);
@@ -57,8 +61,8 @@ export default function AddEventModal({
   const resetForm = () => {
     setTitle("");
     setDate(initialDate);
-    setStartTime("10:00");
-    setEndTime("11:00");
+    setStartTime(initialStartTime);
+    setEndTime(initialEndTime);
     setLocation("");
     setDescription("");
     setIsAllDay(false);

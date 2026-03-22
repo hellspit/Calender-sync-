@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -101,7 +102,16 @@ export default function CalendarScreen() {
             <EventCard event={item} onPress={() => setSelectedEvent(item)} />
           )}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 110, paddingTop: 4 }}
+          contentContainerStyle={{ paddingBottom: 180, paddingTop: 4 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isFetching}
+              onRefresh={() => refetch()}
+              tintColor="#7C6EFF"
+              colors={["#7C6EFF"]}
+              progressBackgroundColor="#141424"
+            />
+          }
         />
       ) : (
         <View style={styles.centered}>
@@ -143,7 +153,7 @@ export default function CalendarScreen() {
 
       {/* FAB menu */}
       {showFabMenu && (
-        <View style={[styles.fabMenu, { bottom: insets.bottom + 100 }]}>
+        <View style={[styles.fabMenu, { bottom: insets.bottom + 168 }]}>
           {[
             { target: "google" as AddTarget, label: "Add to Google", color: "#4285F4" },
             { target: "microsoft" as AddTarget, label: "Add to Microsoft", color: "#2884E0" },
@@ -166,7 +176,7 @@ export default function CalendarScreen() {
 
       {/* FAB button */}
       <TouchableOpacity
-        style={[styles.fab, { bottom: insets.bottom + 30 }]}
+        style={[styles.fab, { bottom: insets.bottom + 100 }]}
         onPress={() => setShowFabMenu(!showFabMenu)}
         activeOpacity={0.85}
       >

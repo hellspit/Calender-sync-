@@ -1,13 +1,14 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { FreeSlot } from "../types/event";
 
 interface Props {
   slot: FreeSlot;
+  onBook?: () => void;
 }
 
-export default function FreeSlotCard({ slot }: Props) {
+export default function FreeSlotCard({ slot, onBook }: Props) {
   const startTime = formatTime(slot.start);
   const endTime = formatTime(slot.end);
 
@@ -35,6 +36,11 @@ export default function FreeSlotCard({ slot }: Props) {
           {durationLabel}
         </Text>
       </View>
+      {onBook && (
+        <TouchableOpacity style={styles.bookBtn} onPress={onBook} activeOpacity={0.7}>
+          <Ionicons name="add" size={18} color="#00D9A5" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -94,7 +100,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   durationBadge: {
-    marginRight: 14,
+    marginRight: 8,
     backgroundColor: "rgba(0,217,165,0.1)",
     borderRadius: 10,
     paddingHorizontal: 10,
@@ -113,5 +119,16 @@ const styles = StyleSheet.create({
   },
   durationTextLong: {
     color: "#00EDB5",
+  },
+  bookBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,217,165,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(0,217,165,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
 });
