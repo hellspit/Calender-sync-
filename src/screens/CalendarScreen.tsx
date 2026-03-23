@@ -26,6 +26,7 @@ import { useAuth } from "../auth/AuthContext";
 import { updateGoogleEvent, deleteGoogleEvent } from "../services/googleCalendar";
 import { updateOutlookEvent, deleteOutlookEvent } from "../services/outlookCalendar";
 import { DatePickerField, TimePickerField } from "../components/PickerField";
+import AttendeeInput from "../components/AttendeeInput";
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
@@ -405,6 +406,7 @@ function EditModal({
   const [endTime, setEndTime] = useState(event.isAllDay ? "23:59" : initEndTime);
   const [location, setLocation] = useState(event.location ?? "");
   const [description, setDescription] = useState(event.description ?? "");
+  const [attendees, setAttendees] = useState<string[]>(event.attendees || []);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -442,6 +444,7 @@ function EditModal({
             description: description.trim() || "",
             startISO: newStartISO,
             endISO: newEndISO,
+            attendees,
           });
         } else {
           Alert.alert("Error", "Google session expired.");
@@ -455,6 +458,7 @@ function EditModal({
             description: description.trim() || "",
             startDateTime: toNaive(newStartISO),
             endDateTime: toNaive(newEndISO),
+            attendees,
           });
         } else {
           Alert.alert("Error", "Microsoft session expired.");
@@ -467,6 +471,7 @@ function EditModal({
         end: newEndISO,
         location: location.trim() || undefined,
         description: description.trim() || undefined,
+        attendees,
       });
       Alert.alert("Saved", "Event updated successfully.");
     } catch (err: any) {
@@ -622,6 +627,16 @@ function EditModal({
           numberOfLines={4}
           textAlignVertical="top"
           selectionColor={accentColor}
+        />
+
+        <EditFieldLabel icon="people-outline" label="Attendees" />
+        <AttendeeInput
+          attendees={attendees}
+          onChange={setAttendees}
+          accentColor={accentColor}
+          getMicrosoftToken={
+            event.source === "outlook" ? getValidMicrosoftToken : undefined
+          }
         />
 
         <TouchableOpacity

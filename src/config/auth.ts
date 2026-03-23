@@ -10,7 +10,7 @@ export const GOOGLE_CONFIG = {
 export const MICROSOFT_CONFIG = {
   clientId: process.env.EXPO_PUBLIC_MICROSOFT_CLIENT_ID ?? "",
   clientSecret: process.env.EXPO_PUBLIC_MICROSOFT_CLIENT_SECRET ?? "",
-  scopes: ["Calendars.ReadWrite"],
+  scopes: ["Calendars.ReadWrite", "User.ReadBasic.All"],
   tenantId: process.env.EXPO_PUBLIC_MICROSOFT_TENANT_ID ?? "",
 };
 

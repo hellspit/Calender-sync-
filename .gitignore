@@ -44,3 +44,6 @@ yarn-error.*
 # custom ignores
 temp/
 cread/
+
+# android builds
+*.apk

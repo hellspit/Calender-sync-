@@ -18,6 +18,7 @@ import {
   createOutlookEvent,
   updateOutlookEvent,
   deleteOutlookEvent,
+  searchOutlookUsers,
 } from "./outlookCalendar";
 import { normalizeGoogleEvents, normalizeOutlookEvents } from "./normalizer";
 import { mergeEvents } from "./eventMerger";
@@ -71,7 +72,10 @@ RULES:
 7. Always confirm actions after they succeed.
 8. Be concise but friendly. Use emoji occasionally.
 9. If the user says something unrelated to calendar management, politely redirect them.
-10. The "source" parameter should be "google" or "microsoft" (not "outlook").`;
+10. The "source" parameter should be "google" or "microsoft" (not "outlook").
+11. You can add attendees (email addresses) when creating or editing events. The attendees parameter accepts an array of email strings.
+12. When the user asks to add or remove attendees from an existing event, use the edit_event tool with the attendees parameter containing the full updated list of attendee emails.
+13. When the user refers to a person by NAME (not email), use search_people first to find their email, then use that email in create_event or edit_event. Always search before assuming an email.`;
 }
 
 // ─── Tool Definitions ─────────────────────────────────────────────
@@ -131,6 +135,11 @@ const tools = [
             type: "string",
             description: "Optional event description",
           },
+          attendees: {
+            type: "array",
+            items: { type: "string" },
+            description: "Optional list of attendee email addresses",
+          },
           source: {
             type: "string",
             enum: ["google", "microsoft", "both"],
@@ -164,6 +173,11 @@ const tools = [
           endTime: { type: "string", description: "New end time HH:MM (optional)" },
           location: { type: "string", description: "New location (optional)" },
           description: { type: "string", description: "New description (optional)" },
+          attendees: {
+            type: "array",
+            items: { type: "string" },
+            description: "Updated full list of attendee email addresses. To add an attendee, include all existing plus the new one. To remove, include all except the one to remove.",
+          },
         },
         required: ["eventId", "source"],
       },
@@ -188,6 +202,23 @@ const tools = [
           },
         },
         required: ["eventId", "source"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "search_people",
+      description: "Search the company directory for people by name or email. Use this when the user mentions a person's name and you need to find their email address to add them as an attendee.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The person's name or partial email to search for",
+          },
+        },
+        required: ["query"],
       },
     },
   },
@@ -324,6 +355,8 @@ async function executeTool(
       return await toolEditEvent(args, googleToken, microsoftToken);
     case "delete_event":
       return await toolDeleteEvent(args, googleToken, microsoftToken);
+    case "search_people":
+      return await toolSearchPeople(args, microsoftToken);
     default:
       return { error: `Unknown tool: ${name}` };
   }
@@ -365,6 +398,7 @@ async function toolListEvents(
         isAllDay: e.isAllDay,
         location: e.location,
         description: e.description,
+        attendees: e.attendees,
       })),
     };
   } catch (err: any) {
@@ -380,12 +414,13 @@ async function toolCreateEvent(
     endTime: string;
     location?: string;
     description?: string;
+    attendees?: string[];
     source?: string;
   },
   googleToken: string | null,
   microsoftToken: string | null
 ) {
-  const { title, date, startTime, endTime, location, description, source = "google" } = args;
+  const { title, date, startTime, endTime, location, description, attendees, source = "google" } = args;
   const offset = getDeviceOffset();
 
   const payload: NewEventPayload = {
@@ -396,6 +431,7 @@ async function toolCreateEvent(
     description: description || undefined,
     isAllDay: false,
     allDayDate: date,
+    attendees: attendees && attendees.length > 0 ? attendees : undefined,
   };
 
   const results: string[] = [];
@@ -440,11 +476,12 @@ async function toolEditEvent(
     endTime?: string;
     location?: string;
     description?: string;
+    attendees?: string[];
   },
   googleToken: string | null,
   microsoftToken: string | null
 ) {
-  const { eventId, source, title, date, startTime, endTime, location, description } = args;
+  const { eventId, source, title, date, startTime, endTime, location, description, attendees } = args;
   const realId = eventId.replace(/^[gm]_/, "");
   const offset = getDeviceOffset();
 
@@ -456,6 +493,7 @@ async function toolEditEvent(
       if (description) updates.description = description;
       if (startTime && date) updates.startISO = `${date}T${startTime}:00${offset}`;
       if (endTime && date) updates.endISO = `${date}T${endTime}:00${offset}`;
+      if (attendees) updates.attendees = attendees;
       await updateGoogleEvent(googleToken, realId, updates);
     } else if (source === "microsoft" && microsoftToken) {
       const updates: any = {};
@@ -464,6 +502,7 @@ async function toolEditEvent(
       if (description) updates.description = description;
       if (startTime && date) updates.startDateTime = `${date}T${startTime}:00`;
       if (endTime && date) updates.endDateTime = `${date}T${endTime}:00`;
+      if (attendees) updates.attendees = attendees;
       await updateOutlookEvent(microsoftToken, realId, updates);
     } else {
       return { success: false, error: `Not signed into ${source}` };
@@ -500,6 +539,37 @@ async function toolDeleteEvent(
     return {
       success: false,
       error: err?.response?.data?.error?.message || err?.message || "Failed to delete event",
+    };
+  }
+}
+
+async function toolSearchPeople(
+  args: { query: string },
+  microsoftToken: string | null
+) {
+  const { query } = args;
+
+  if (!microsoftToken) {
+    return {
+      success: false,
+      error: "Not signed into Microsoft. People search requires a Microsoft account.",
+    };
+  }
+
+  try {
+    const results = await searchOutlookUsers(microsoftToken, query);
+    return {
+      success: true,
+      count: results.length,
+      people: results.map((p) => ({
+        name: p.displayName,
+        email: p.mail,
+      })),
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || "Failed to search people",
     };
   }
 }

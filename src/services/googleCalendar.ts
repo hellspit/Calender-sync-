@@ -44,6 +44,7 @@ export interface NewEventPayload {
   description?: string;
   isAllDay?: boolean;
   allDayDate?: string; // "YYYY-MM-DD" used only when isAllDay is true
+  attendees?: string[]; // list of email addresses
 }
 
 /**
@@ -66,6 +67,10 @@ export async function createGoogleEvent(
       : { dateTime: payload.endISO },
   };
 
+  if (payload.attendees && payload.attendees.length > 0) {
+    body.attendees = payload.attendees.map((email) => ({ email: email.trim() }));
+  }
+
   const response = await axios.post(
     `${BASE_URL}/calendars/primary/events`,
     body,
@@ -82,7 +87,7 @@ export async function createGoogleEvent(
 export async function updateGoogleEvent(
   token: string,
   eventId: string,
-  updates: { title?: string; location?: string; description?: string; startISO?: string; endISO?: string }
+  updates: { title?: string; location?: string; description?: string; startISO?: string; endISO?: string; attendees?: string[] }
 ): Promise<any> {
   const body: any = {};
   if (updates.title !== undefined) body.summary = updates.title;
@@ -90,6 +95,9 @@ export async function updateGoogleEvent(
   if (updates.description !== undefined) body.description = updates.description;
   if (updates.startISO !== undefined) body.start = { dateTime: updates.startISO };
   if (updates.endISO !== undefined) body.end = { dateTime: updates.endISO };
+  if (updates.attendees !== undefined) {
+    body.attendees = updates.attendees.map((email) => ({ email: email.trim() }));
+  }
 
   const response = await axios.patch(
     `${BASE_URL}/calendars/primary/events/${eventId}`,

@@ -18,6 +18,7 @@ import { useAuth } from "../auth/AuthContext";
 import { createGoogleEvent, NewEventPayload } from "../services/googleCalendar";
 import { createOutlookEvent } from "../services/outlookCalendar";
 import { DatePickerField, TimePickerField } from "./PickerField";
+import AttendeeInput from "./AttendeeInput";
 
 export type AddTarget = "google" | "microsoft" | "both";
 
@@ -49,6 +50,7 @@ export default function AddEventModal({
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [isAllDay, setIsAllDay] = useState(false);
+  const [attendees, setAttendees] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isGoogle = target === "google";
@@ -66,6 +68,7 @@ export default function AddEventModal({
     setLocation("");
     setDescription("");
     setIsAllDay(false);
+    setAttendees([]);
   };
 
   const handleClose = () => {
@@ -87,6 +90,7 @@ export default function AddEventModal({
       description: description.trim() || undefined,
       isAllDay,
       allDayDate: date,
+      attendees: attendees.length > 0 ? attendees : undefined,
     };
   };
 
@@ -270,6 +274,19 @@ export default function AddEventModal({
             numberOfLines={4}
             textAlignVertical="top"
             selectionColor={accentColor}
+          />
+
+          {/* Attendees */}
+          <FL icon="people-outline" label="Attendees" />
+          <AttendeeInput
+            attendees={attendees}
+            onChange={setAttendees}
+            accentColor={accentColor}
+            getMicrosoftToken={
+              target === "microsoft" || target === "both"
+                ? getValidMicrosoftToken
+                : undefined
+            }
           />
 
           {/* Destination badge */}

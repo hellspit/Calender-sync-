@@ -44,6 +44,35 @@ export async function fetchOutlookEvents(
 }
 
 /**
+ * Search the company directory for users matching a query string.
+ * Uses the Microsoft Graph /users endpoint with $search.
+ * Requires the User.ReadBasic.All scope.
+ */
+export async function searchOutlookUsers(
+  token: string,
+  query: string
+): Promise<{ displayName: string; mail: string }[]> {
+  if (!query || query.trim().length < 2) return [];
+  try {
+    const response = await axios.get(`${BASE_URL}/users`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ConsistencyLevel: "eventual",
+      },
+      params: {
+        $search: `"displayName:${query}" OR "mail:${query}"`,
+        $select: "displayName,mail",
+        $top: "10",
+      },
+    });
+    return (response.data.value || []).filter((u: any) => u.mail);
+  } catch (err) {
+    console.warn("[OutlookCalendar] User search failed:", err);
+    return [];
+  }
+}
+
+/**
  * Create an event on the user's primary Outlook Calendar.
  * Returns the created event's raw object.
  */
@@ -97,6 +126,13 @@ export async function createOutlookEvent(
         end: { dateTime: toLocalNaive(payload.endISO), timeZone: deviceTimeZone },
       };
 
+  if (payload.attendees && payload.attendees.length > 0) {
+    body.attendees = payload.attendees.map((email) => ({
+      emailAddress: { address: email.trim() },
+      type: "required",
+    }));
+  }
+
   console.log("[OutlookCalendar] Creating event:", JSON.stringify(body, null, 2));
 
   try {
@@ -126,7 +162,7 @@ export async function createOutlookEvent(
 export async function updateOutlookEvent(
   token: string,
   eventId: string,
-  updates: { title?: string; location?: string; description?: string; startDateTime?: string; endDateTime?: string; timeZone?: string }
+  updates: { title?: string; location?: string; description?: string; startDateTime?: string; endDateTime?: string; timeZone?: string; attendees?: string[] }
 ): Promise<any> {
   const tz = updates.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
   const body: any = {};
@@ -136,6 +172,12 @@ export async function updateOutlookEvent(
     body.body = { contentType: "Text", content: updates.description };
   if (updates.startDateTime !== undefined) body.start = { dateTime: updates.startDateTime, timeZone: tz };
   if (updates.endDateTime !== undefined) body.end = { dateTime: updates.endDateTime, timeZone: tz };
+  if (updates.attendees !== undefined) {
+    body.attendees = updates.attendees.map((email) => ({
+      emailAddress: { address: email.trim() },
+      type: "required",
+    }));
+  }
 
   const response = await axios.patch(`${BASE_URL}/me/events/${eventId}`, body, {
     headers: {
