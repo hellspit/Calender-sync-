@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import LoginScreen from "../screens/LoginScreen";
 import CalendarScreen from "../screens/CalendarScreen";
+import ChatScreen from "../screens/ChatScreen";
 import FreeTimeScreen from "../screens/FreeTimeScreen";
 import { useAuth } from "../auth/AuthContext";
 
@@ -33,6 +34,8 @@ export default function AppNavigator() {
               name = focused ? "person" : "person-outline";
             } else if (route.name === "Calendar") {
               name = focused ? "calendar" : "calendar-outline";
+            } else if (route.name === "Chat") {
+              name = focused ? "chatbubbles" : "chatbubbles-outline";
             } else {
               name = focused ? "time" : "time-outline";
             }
@@ -51,6 +54,11 @@ export default function AppNavigator() {
               name="Calendar"
               component={CalendarScreen}
               options={{ tabBarLabel: "Calendar" }}
+            />
+            <Tab.Screen
+              name="Chat"
+              component={ChatScreen}
+              options={{ tabBarLabel: "Chat" }}
             />
             <Tab.Screen
               name="Free Time"
