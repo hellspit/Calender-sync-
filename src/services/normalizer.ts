@@ -10,7 +10,7 @@ import { UnifiedEvent } from "../types/event";
 export function normalizeGoogleEvent(raw: any): UnifiedEvent {
   const isAllDay = !!raw.start?.date;
   const attendees: string[] = (raw.attendees ?? []).map(
-    (a: any) => a.displayName || a.email || ""
+    (a: any) => a.email || a.displayName || ""
   ).filter(Boolean);
   return {
     id: `g_${raw.id}`,
@@ -48,7 +48,7 @@ export function normalizeOutlookEvent(raw: any): UnifiedEvent {
     : "";
 
   const attendees: string[] = (raw.attendees ?? []).map(
-    (a: any) => a.emailAddress?.name || a.emailAddress?.address || ""
+    (a: any) => a.emailAddress?.address || a.emailAddress?.name || ""
   ).filter(Boolean);
 
   return {

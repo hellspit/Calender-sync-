@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  FlatList,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -163,48 +162,43 @@ export default function AttendeeInput({
       {/* Suggestions dropdown */}
       {suggestions.length > 0 && (
         <View style={styles.suggestionsBox}>
-          <FlatList
-            data={suggestions}
-            keyExtractor={(item) => item.mail}
-            keyboardShouldPersistTaps="handled"
-            nestedScrollEnabled
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.suggestionRow}
-                onPress={() => addAttendee(item.mail)}
-                activeOpacity={0.7}
+          {suggestions.map((item) => (
+            <TouchableOpacity
+              key={item.mail}
+              style={styles.suggestionRow}
+              onPress={() => addAttendee(item.mail)}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.suggestionAvatar,
+                  { backgroundColor: `${accentColor}20` },
+                ]}
               >
-                <View
+                <Text
                   style={[
-                    styles.suggestionAvatar,
-                    { backgroundColor: `${accentColor}20` },
+                    styles.suggestionInitial,
+                    { color: accentColor },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.suggestionInitial,
-                      { color: accentColor },
-                    ]}
-                  >
-                    {item.displayName.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-                <View style={styles.suggestionText}>
-                  <Text style={styles.suggestionName} numberOfLines={1}>
-                    {item.displayName}
-                  </Text>
-                  <Text style={styles.suggestionEmail} numberOfLines={1}>
-                    {item.mail}
-                  </Text>
-                </View>
-                <Ionicons
-                  name="add-circle-outline"
-                  size={18}
-                  color={accentColor}
-                />
-              </TouchableOpacity>
-            )}
-          />
+                  {item.displayName.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.suggestionText}>
+                <Text style={styles.suggestionName} numberOfLines={1}>
+                  {item.displayName}
+                </Text>
+                <Text style={styles.suggestionEmail} numberOfLines={1}>
+                  {item.mail}
+                </Text>
+              </View>
+              <Ionicons
+                name="add-circle-outline"
+                size={18}
+                color={accentColor}
+              />
+            </TouchableOpacity>
+          ))}
         </View>
       )}
     </View>
