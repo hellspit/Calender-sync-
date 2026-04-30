@@ -1,0 +1,898 @@
+{
+  "name": "Google -> Outlook Calender Version 2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "calendarId": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "triggerOn": "eventCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        624,
+        32
+      ],
+      "id": "d568a005-015e-4e30-91b0-efd1d52d2f77",
+      "name": "Event Created1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "calendar": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "eventId": "={{ $json.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        16
+      ],
+      "id": "c7fab7e4-ccb2-461a-8183-7cc361eb4d9a",
+      "name": "Get Google Event1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "returnAll": true,
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        -160
+      ],
+      "id": "e416fe50-6445-4da1-a95e-0c224b87a924",
+      "name": "Get many events",
+      "webhookId": "a2fa2c63-1998-41b2-bda3-63ee6f3f4f79",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "LupFwOBmjPjUkh4C",
+          "name": "Microsoft Outlook account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "start.dateTime",
+              "field2": "start.dateTime"
+            },
+            {
+              "field1": "end.dateTime",
+              "field2": "end.dateTime"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.compareDatasets",
+      "typeVersion": 2.3,
+      "position": [
+        2144,
+        -160
+      ],
+      "id": "864ca200-660b-4b05-84ff-3c68e51cf5ff",
+      "name": "Compare Datasets"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a69b2879-0b51-48f2-bc79-66c765a65e97",
+              "name": "summary",
+              "value": "={{ $json.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "e9e6c93f-83ff-4935-bcc2-db85633aa352",
+              "name": "start.dateTime",
+              "value": "={{ $json.start.dateTime }}",
+              "type": "string"
+            },
+            {
+              "id": "4c492f01-8fb4-489d-b9f5-90117a8283ba",
+              "name": "end.dateTime",
+              "value": "={{ $json.end.dateTime }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1712,
+        64
+      ],
+      "id": "23cc9138-b4d4-49d5-9cb6-b9756a47e99d",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1357b7e7-b8c7-4237-9a43-868f5d6b8b0d",
+              "name": "subject",
+              "value": "={{ $json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "e9b16c76-133e-4b68-9977-4b97df992a6f",
+              "name": "start.dateTime",
+              "value": "={{ $json.start.dateTime }}",
+              "type": "string"
+            },
+            {
+              "id": "06cf8ef3-cad2-4ef7-9ed6-b54031bccbf4",
+              "name": "end.dateTime",
+              "value": "={{ $json.end.dateTime }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1808,
+        -160
+      ],
+      "id": "1ae8fc53-a5e1-4caf-8a53-4d83af742656",
+      "name": "Edit Fields4"
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendarId": {
+          "__rl": true,
+          "value": "AAMkAGU2YTUwOTE0LTE4Y2MtNGY3Yi05N2I5LTgxMGI2NGY5ZjE4OABGAAAAAABxQsBTgbcpQpJUWAS2MOM6BwA17ExxtyiOR4YCgbik1iQqAAAAAAEGAAA17ExxtyiOR4YCgbik1iQqAAAAAEX0AAA=",
+          "mode": "list",
+          "cachedResultName": "Calendar"
+        },
+        "subject": "={{ $json.summary }}",
+        "startDateTime": "={{ $json.start.dateTime }}",
+        "endDateTime": "={{ $json.end.dateTime }}",
+        "additionalFields": {
+          "body": "={{ $json.description }}\n\n--------------------\nCREATED by AgentCal\n[GoogleID: {{ $('Get Google Event1').item.json.id }}]"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        2592,
+        16
+      ],
+      "id": "659fb007-5b19-488f-af01-c38c2c0aab77",
+      "name": "Create an event",
+      "webhookId": "5dc59f4e-0360-40dd-abe0-f82b3fb2d747",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "LupFwOBmjPjUkh4C",
+          "name": "Microsoft Outlook account 7"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        -256
+      ],
+      "id": "ec5b4653-bcfb-4b76-b4d4-8d17102f1908",
+      "name": "Waste Terms"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "calendar": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "eventId": "={{ $json.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1008,
+        768
+      ],
+      "id": "8ecbc18f-c3aa-4113-8099-8623cf969726",
+      "name": "Get Google Event2",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "calendarId": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "triggerOn": "eventUpdated",
+        "options": {
+          "matchTerm": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        688,
+        784
+      ],
+      "id": "751b0285-bbca-4932-841d-f207fc99d4b3",
+      "name": "Event Updated1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "calendarId": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "triggerOn": "eventCancelled",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        624,
+        1424
+      ],
+      "id": "0405cd47-20cb-4b6a-85a5-debc0e8c536b",
+      "name": "Event Cancelled1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "delete",
+        "calendarId": {
+          "__rl": true,
+          "value": "AAMkAGU2YTUwOTE0LTE4Y2MtNGY3Yi05N2I5LTgxMGI2NGY5ZjE4OABGAAAAAABxQsBTgbcpQpJUWAS2MOM6BwA17ExxtyiOR4YCgbik1iQqAAAAAAEGAAA17ExxtyiOR4YCgbik1iQqAAAAAEX0AAA=",
+          "mode": "list",
+          "cachedResultName": "Calendar"
+        },
+        "eventId": {
+          "__rl": true,
+          "value": "={{ $json.extractedOutlookId }}",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        1408
+      ],
+      "id": "eb5bad8c-99eb-49c6-a690-5ef27dfc0758",
+      "name": "Delete an event",
+      "webhookId": "5dc59f4e-0360-40dd-abe0-f82b3fb2d747",
+      "alwaysOutputData": true,
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "LupFwOBmjPjUkh4C",
+          "name": "Microsoft Outlook account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🚀 Event Creation Workflow\n\nThis section handles **new events** created in Google Calendar.\n\n1.  **Event Created (Google Calendar Trigger)**: Initiates the workflow when a new event is detected.\n2.  **Get Google Event**: Fetches the full details of the newly created Google Calendar event.\n3.  **AI Agent1**: Decides whether to create a corresponding event in Outlook based on predefined rules, including searching for existing Outlook events to prevent duplicates.\n4.  **Edit Fields**: Processes the output of the AI Agent.\n5.  **If**: Checks the AI Agent's decision to determine if an Outlook event should be created.\n6.  **Create an event in Microsoft Outlook**: If no duplicate is found and creation is allowed, this node creates the event in Outlook.\n7.  **Update an event (Google Calendar)**: (Conditional) If an Outlook event is successfully created, this node updates the Google Calendar event to tag it with the Outlook Event ID, preventing future loops.",
+        "height": 492,
+        "width": 800
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -32,
+        -320
+      ],
+      "name": "Event Creation Logic",
+      "id": "d860ae8e-edee-4cac-b6fe-7b03ee067388",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 🔄 Event Update Workflow\n\nThis section manages **updates to existing events** in Google Calendar.\n\n1.  **Event Updated (Google Calendar Trigger)**: Triggers when an event is modified in Google Calendar.\n2.  **Get Google Event3**: Retrieves the latest details of the updated Google Calendar event.\n3.  **AI Agent4**: Determines if the corresponding Outlook event should be updated. It checks if the event was previously synced by AgentCal and searches for a matching Outlook event.\n4.  **Edit Fields1**: Processes the output of the AI Agent.\n5.  **If1**: Evaluates the AI Agent's decision to proceed with the Outlook event update.\n6.  **Update an event in Microsoft Outlook2**: If a match is found and an update is permitted, this node updates the specific Outlook event.\n7.  **Update an event1 (Google Calendar)**: (Conditional) Updates the Google Calendar event to reflect the sync status.",
+        "height": 492,
+        "width": 896,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "name": "Event Update Logic",
+      "position": [
+        -96,
+        544
+      ],
+      "id": "9e720f7a-49c8-43c9-860b-71f6c30b7785",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 🗑️ Event Cancellation Workflow\n\nThis section handles **cancelled events** in Google Calendar.\n\n1.  **Event Cancelled (Google Calendar Trigger)**: Activates when an event is cancelled in Google Calendar.\n2.  **Get Google Event4**: Fetches the details of the cancelled Google Calendar event.\n3.  **AI Agent5**: Decides whether to delete the corresponding Outlook event. It verifies if the event was originally synced by AgentCal and attempts to find a precise match in Outlook.\n4.  **No direct deletion**: The AI Agent only makes a *decision*. The actual deletion of the Outlook event would typically be handled by subsequent nodes based on the AI Agent's `shouldDeleteOutlook` output, though those nodes are not currently present in this workflow branch. This ensures a safe, decision-based cancellation process.",
+        "height": 468,
+        "width": 848,
+        "color": 3
+      },
+      "position": [
+        -32,
+        1136
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "name": "Event Cancellation Logic",
+      "id": "a9c1a94b-ec96-4832-b3ec-af6f33a658f6",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9d00b7db-0eda-4b1b-b417-d46b8c90822b",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "AgentCal",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        832,
+        32
+      ],
+      "id": "bf96bb38-466c-4a8c-8dc5-b8e018318a68",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "update",
+        "calendarId": {
+          "__rl": true,
+          "value": "AAMkAGU2YTUwOTE0LTE4Y2MtNGY3Yi05N2I5LTgxMGI2NGY5ZjE4OABGAAAAAABxQsBTgbcpQpJUWAS2MOM6BwA17ExxtyiOR4YCgbik1iQqAAAAAAEGAAA17ExxtyiOR4YCgbik1iQqAAAAAEX0AAA=",
+          "mode": "list",
+          "cachedResultName": "Calendar"
+        },
+        "eventId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "additionalFields": {
+          "body": "={{ $('Get Google Event2').item.json.description }}\n\n-----------------\nUPDATED by AgentCal\n[GoogleID: {{ $('Get Google Event2').item.json.id }}]",
+          "end": "={{ $('Get Google Event2').item.json.end.dateTime }}",
+          "start": "={{ $('Get Google Event2').item.json.start.dateTime }}",
+          "subject": "={{ $('Get Google Event2').item.json.summary }}"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        2096,
+        784
+      ],
+      "id": "100cfd12-0c37-4b50-8e24-a532de311f83",
+      "name": "Update an event",
+      "webhookId": "572a701b-90d7-436f-aded-02af96993fff",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "LupFwOBmjPjUkh4C",
+          "name": "Microsoft Outlook account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "eventId": "={{ $('Get Google Event1').item.json.id }}",
+        "updateFields": {
+          "description": "=={{ $('Get Google Event1').item.json.description }}\n\n--------------------\nSYNCED by AgentCal\n[OutlookID: {{ $json.id }}]\n"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2800,
+        16
+      ],
+      "id": "cf1d89e4-1d96-44f5-a5dd-04d22108f355",
+      "name": "Update an event1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const description = $input.item.json.description || \"\";\nconst match = description.match(/\\[OutlookID:\\s*(.*?)\\]/);\n\nif (match && match[1]) {\n  return {\n    json: {\n      ...$input.item.json,\n      extractedOutlookId: match[1] \n    }\n  };\n} else {\n  throw new Error(\"No Outlook twin ID found in description!\");\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        768
+      ],
+      "id": "4918fc75-3aae-4e74-a6ce-9f3294f4e461",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the description from the cancelled Google event\nconst description = $input.item.json.description || \"\";\n\n// Look for the exact OutlookID tag using a regular expression\nconst match = description.match(/\\[OutlookID:\\s*(.*?)\\]/);\n\n// If we find a match, extract the ID and pass it forward\nif (match && match[1]) {\n  return {\n    json: {\n      ...$input.item.json,\n      extractedOutlookId: match[1] \n    }\n  };\n} else {\n  // If there's no Outlook ID (meaning it wasn't synced by AgentCal), \n  // returning an empty array cleanly stops the workflow here.\n  return [];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        1392
+      ],
+      "id": "eb27b3f8-2424-4d65-9971-b8d554429ec0",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "get",
+        "calendarId": {
+          "__rl": true,
+          "value": "AAMkAGU2YTUwOTE0LTE4Y2MtNGY3Yi05N2I5LTgxMGI2NGY5ZjE4OABGAAAAAABxQsBTgbcpQpJUWAS2MOM6BwA17ExxtyiOR4YCgbik1iQqAAAAAAEGAAA17ExxtyiOR4YCgbik1iQqAAAAAEX0AAA=",
+          "mode": "list",
+          "cachedResultName": "Calendar"
+        },
+        "eventId": {
+          "__rl": true,
+          "value": "={{ $json.extractedOutlookId }}",
+          "mode": "id"
+        },
+        "output": "raw"
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        768
+      ],
+      "id": "53075ec4-c0de-40b2-93c0-2393edeece2b",
+      "name": "Get an event",
+      "webhookId": "0d83cbef-8df5-48eb-9e0d-4bd44b36c189",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "LupFwOBmjPjUkh4C",
+          "name": "Microsoft Outlook account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "11161fb6-85bf-41a0-9a08-50c09566dcb6",
+              "leftValue": "={{ $('Get Google Event2').item.json.summary }}",
+              "rightValue": "={{ $json.subject }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "ddb5f3a7-ab2b-43c5-9ef7-2205bd1412a2",
+              "leftValue": "={{ new Date($('Get Google Event2').item.json.start.dateTime).getTime() }}",
+              "rightValue": "={{ new Date($json.start.dateTime + 'Z').getTime() }}",
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "f7d86df2-1e9b-4e48-92be-3956dd396921",
+              "leftValue": "={{ new Date($('Get Google Event2').item.json.end.dateTime).getTime() }}",
+              "rightValue": "={{ new Date($json.end.dateTime + 'Z').getTime() }}",
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1664,
+        768
+      ],
+      "id": "7e9f3a3b-2739-4632-b204-c583010f74dd",
+      "name": "If3"
+    }
+  ],
+  "pinData": {
+    "Event Cancelled1": [
+      {
+        "json": {
+          "kind": "calendar#event",
+          "etag": "\"3546685152245726\"",
+          "id": "4q7gro2c8fnm8rpvd27fm53thb",
+          "status": "cancelled",
+          "htmlLink": "https://www.google.com/calendar/event?eid=NHE3Z3JvMmM4Zm5tOHJwdmQyN2ZtNTN0aGIgZWNlMjIxMjNAaWlpdGthbHlhbmkuYWMuaW4",
+          "created": "2026-03-12T19:01:41.000Z",
+          "updated": "2026-03-12T19:09:36.122Z",
+          "summary": "hi",
+          "description": "=\n\n--------------------\nSYNCED by AgentCal\n[OutlookID: AAMkAGU2YTUwOTE0LTE4Y2MtNGY3Yi05N2I5LTgxMGI2NGY5ZjE4OABGAAAAAABxQsBTgbcpQpJUWAS2MOM6BwA17ExxtyiOR4YCgbik1iQqAAAAAAENAAA17ExxtyiOR4YCgbik1iQqAAA3fElTAAA=]\n",
+          "creator": {
+            "email": "ece22123@iiitkalyani.ac.in",
+            "self": true
+          },
+          "organizer": {
+            "email": "ece22123@iiitkalyani.ac.in",
+            "self": true
+          },
+          "start": {
+            "dateTime": "2026-03-13T14:30:00+05:30",
+            "timeZone": "Asia/Kolkata"
+          },
+          "end": {
+            "dateTime": "2026-03-13T15:30:00+05:30",
+            "timeZone": "Asia/Kolkata"
+          },
+          "iCalUID": "4q7gro2c8fnm8rpvd27fm53thb@google.com",
+          "sequence": 1,
+          "reminders": {
+            "useDefault": true
+          },
+          "eventType": "default"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Event Updated1": [
+      {
+        "json": {
+          "kind": "calendar#event",
+          "etag": "\"3546753114507838\"",
+          "id": "vr4n81iu5k6cdoq6p520ttgrbk",
+          "status": "confirmed",
+          "htmlLink": "https://www.google.com/calendar/event?eid=dnI0bjgxaXU1azZjZG9xNnA1MjB0dGdyYmsgZWNlMjIxMjNAaWlpdGthbHlhbmkuYWMuaW4",
+          "created": "2026-03-12T20:33:36.000Z",
+          "updated": "2026-03-13T04:35:57.253Z",
+          "summary": "hi change 2 2",
+          "description": "\n\n-----------------\nUPDATED by AgentCal\n[OutlookID: AAMkAGU2YTUwOTE0LTE4Y2MtNGY3Yi05N2I5LTgxMGI2NGY5ZjE4OABGAAAAAABxQsBTgbcpQpJUWAS2MOM6BwA17ExxtyiOR4YCgbik1iQqAAAAAAENAAA17ExxtyiOR4YCgbik1iQqAAA3fElkAAA=]",
+          "creator": {
+            "email": "ece22123@iiitkalyani.ac.in",
+            "self": true
+          },
+          "organizer": {
+            "email": "ece22123@iiitkalyani.ac.in",
+            "self": true
+          },
+          "start": {
+            "dateTime": "2026-03-13T03:00:00+05:30",
+            "timeZone": "America/New_York"
+          },
+          "end": {
+            "dateTime": "2026-03-13T03:30:00+05:30",
+            "timeZone": "America/New_York"
+          },
+          "iCalUID": "vr4n81iu5k6cdoq6p520ttgrbk@google.com",
+          "sequence": 0,
+          "reminders": {
+            "useDefault": true
+          },
+          "eventType": "default"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Event Created1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Google Event1": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Datasets": {
+      "main": [
+        [
+          {
+            "node": "Waste Terms",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Waste Terms",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Google Event2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Updated1": {
+      "main": [
+        [
+          {
+            "node": "Get Google Event2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Cancelled1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get Google Event1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Update an event1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Get an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Delete an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get an event": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Update an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "be0f8671-20bd-48ab-b8ab-53d50d074462",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e907079557ea159152450751e0fce39bd9242200557dcdd8ab8967fe8f5b3c7"
+  },
+  "id": "XJE7aDbsrCjmiU7S",
+  "tags": []
+}

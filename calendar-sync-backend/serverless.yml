@@ -1,0 +1,125 @@
+service: calendar-sync-backend
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  timeout: 30
+  memorySize: 256
+  environment:
+    GOOGLE_CLIENT_ID: ${env:GOOGLE_CLIENT_ID}
+    GOOGLE_CLIENT_SECRET: ${env:GOOGLE_CLIENT_SECRET}
+    MICROSOFT_CLIENT_ID: ${env:MICROSOFT_CLIENT_ID}
+    MICROSOFT_CLIENT_SECRET: ${env:MICROSOFT_CLIENT_SECRET}
+    MICROSOFT_TENANT_ID: ${env:MICROSOFT_TENANT_ID}
+    DYNAMODB_USERS_TABLE: calendar-sync-users
+    DYNAMODB_MAPPINGS_TABLE: calendar-sync-mappings
+    DYNAMODB_IDEMPOTENCY_TABLE: calendar-sync-idempotency
+    API_SECRET_KEY: ${env:API_SECRET_KEY}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+          Resource:
+            - !GetAtt UsersTable.Arn
+            - !GetAtt MappingsTable.Arn
+            - !GetAtt IdempotencyTable.Arn
+
+functions:
+  register:
+    handler: dist/handlers/registerUser.handler
+    events:
+      - httpApi:
+          path: /api/register
+          method: POST
+
+  unregister:
+    handler: dist/handlers/handlers.handleUnregister
+    events:
+      - httpApi:
+          path: /api/unregister
+          method: POST
+
+  syncStatus:
+    handler: dist/handlers/handlers.handleSyncStatus
+    events:
+      - httpApi:
+          path: /api/status/{userId}
+          method: GET
+
+  googleWebhook:
+    handler: dist/handlers/handlers.handleGoogleWebhook
+    events:
+      - httpApi:
+          path: /webhooks/google
+          method: POST
+
+  microsoftWebhook:
+    handler: dist/handlers/handlers.handleMicrosoftWebhook
+    events:
+      - httpApi:
+          path: /webhooks/microsoft
+          method: POST
+
+  pollSync:
+    handler: dist/handlers/handlers.handlePollSync
+    timeout: 120
+    events:
+      - schedule: rate(5 minutes)
+
+  renewWebhooks:
+    handler: dist/handlers/handlers.handleRenewWebhooks
+    events:
+      - schedule: rate(12 hours)
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: calendar-sync-users
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    MappingsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: calendar-sync-mappings
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: googleEventId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: googleEventId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+
+    IdempotencyTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: calendar-sync-idempotency
+        AttributeDefinitions:
+          - AttributeName: requestHash
+            AttributeType: S
+        KeySchema:
+          - AttributeName: requestHash
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true

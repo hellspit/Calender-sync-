@@ -1,0 +1,1261 @@
+{
+  "name": "Outlook -> Google Sync Version 2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "event",
+        "fromAllCalendars": false,
+        "calendarId": {
+          "__rl": true,
+          "value": "AAMkAGU2YTUwOTE0LTE4Y2MtNGY3Yi05N2I5LTgxMGI2NGY5ZjE4OABGAAAAAABxQsBTgbcpQpJUWAS2MOM6BwA17ExxtyiOR4YCgbik1iQqAAAAAAEGAAA17ExxtyiOR4YCgbik1iQqAAAAAEX0AAA=",
+          "mode": "list",
+          "cachedResultName": "Calendar"
+        },
+        "returnAll": true,
+        "output": "fields",
+        "fields": [
+          "subject",
+          "start",
+          "end",
+          "bodyPreview",
+          "createdDateTime",
+          "lastModifiedDateTime",
+          "changeKey",
+          "organizer",
+          "attendees",
+          "isCancelled"
+        ],
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        2800
+      ],
+      "id": "bdb6fa00-e612-4e7f-bdff-f2dc06b596e9",
+      "name": "Get Outlook Events2",
+      "webhookId": "967b4e1e-c372-4b76-a3e1-ee0d1756cabb",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "LupFwOBmjPjUkh4C",
+          "name": "Microsoft Outlook account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a08a143-0d43-4f93-9754-8b6b37f66735",
+              "name": "id2",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "9b983944-a224-4ac5-af79-1e2e6ff81c61",
+              "name": "subject2",
+              "value": "={{ $json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "b6e0f7ca-1303-4ef1-bcd7-1063c84180d4",
+              "name": "bodyPreview2",
+              "value": "={{ $json.bodyPreview }}",
+              "type": "string"
+            },
+            {
+              "id": "d57daaaf-5d76-4de9-937b-ab5b79fb16bd",
+              "name": "start_datetime2",
+              "value": "={{ $json.start.dateTime }}",
+              "type": "string"
+            },
+            {
+              "id": "2f5515b0-a757-42dc-a418-494086c217f0",
+              "name": "end_dateTime2",
+              "value": "={{ $json.end.dateTime }}",
+              "type": "string"
+            },
+            {
+              "id": "59d1a639-e64e-495d-9ac6-bfab762ecd8e",
+              "name": "organizer.emailAddress.name2",
+              "value": "={{ $json.organizer.emailAddress.name }}",
+              "type": "string"
+            },
+            {
+              "id": "db35d95f-d6f2-432c-8723-175b97cedec7",
+              "name": "organizer.emailAddress.address2",
+              "value": "={{ $json.organizer.emailAddress.address }}",
+              "type": "string"
+            },
+            {
+              "id": "b9ab120c-c001-4f25-885c-9e01656355a7",
+              "name": "attendees2",
+              "value": "={{ JSON.stringify($json.attendees)}}",
+              "type": "array"
+            },
+            {
+              "id": "87f0e232-5164-4bc6-836d-f7f061c6061b",
+              "name": "lastModifiedDateTime2",
+              "value": "={{ $json.lastModifiedDateTime }}",
+              "type": "string"
+            },
+            {
+              "id": "4d717419-785e-41c3-bf74-231310b36913",
+              "name": "createdDateTime",
+              "value": "={{ $json.createdDateTime }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1360,
+        2800
+      ],
+      "id": "fb251e62-5846-44c6-8766-121ca27aeb22",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "id2",
+              "field2": "id2"
+            }
+          ]
+        },
+        "fuzzyCompare": true,
+        "options": {
+          "multipleMatches": "all"
+        }
+      },
+      "type": "n8n-nodes-base.compareDatasets",
+      "typeVersion": 2.3,
+      "position": [
+        -848,
+        2592
+      ],
+      "id": "52c44340-2886-4736-bad7-25b62c6d9024",
+      "name": "Compare Datasets"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2832
+      ],
+      "id": "70e4d6d6-a9c9-43a4-b2cf-9166fab432e8",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "tableId": "Local Storage",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "outlook_id",
+              "fieldValue": "={{ $json.id2 }}"
+            },
+            {
+              "fieldId": "subject",
+              "fieldValue": "={{ $json.subject2 }}"
+            },
+            {
+              "fieldId": "body_preview",
+              "fieldValue": "={{ $json.bodyPreview2 }}"
+            },
+            {
+              "fieldId": "start_datetime",
+              "fieldValue": "={{ $json.start_dateTime2 }}"
+            },
+            {
+              "fieldId": "end_datetime",
+              "fieldValue": "={{ $json.end_dateTime2 }}"
+            },
+            {
+              "fieldId": "last_modified",
+              "fieldValue": "={{ $json.lastModifiedDateTime2 }}"
+            },
+            {
+              "fieldId": "created_datetime",
+              "fieldValue": "={{ $json.createdDateTime }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        3648
+      ],
+      "id": "068b7d8b-d8c8-4a05-b263-09ab62dd9bb2",
+      "name": "Create a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "7um186lqtb57c3RA",
+          "name": "Supabase account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1216,
+        3632
+      ],
+      "id": "8a42da5b-012e-4801-ab24-6f110d486f54",
+      "name": "Loop Over Items3"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Local Storage",
+        "returnAll": true,
+        "filterType": "none"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1536,
+        2448
+      ],
+      "id": "04ff129c-8886-4bd0-bdcc-47452f700d21",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "7um186lqtb57c3RA",
+          "name": "Supabase account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "TRUNCATE TABLE \"Local Storage\" RESTART IDENTITY;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1536,
+        3168
+      ],
+      "id": "b53e121c-111b-4662-b48a-5293fbceadf0",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "YEQeTLPtOGN6EwkU",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e27b161e-5fa2-4144-a625-e1c76c144944",
+              "name": "id2",
+              "value": "={{ $json.outlook_id }}",
+              "type": "string"
+            },
+            {
+              "id": "7956f8d3-cafa-437f-9e99-926c36418275",
+              "name": "subject2",
+              "value": "={{ $json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "6964a192-a916-4c94-a2b3-a26590ea8b88",
+              "name": "bodyPreview2",
+              "value": "={{ $json.body_preview }}",
+              "type": "string"
+            },
+            {
+              "id": "08b0a73b-ee92-412c-88a4-5f706f1ba49f",
+              "name": "start_dateTime2",
+              "value": "={{ $json.start_datetime }}",
+              "type": "string"
+            },
+            {
+              "id": "d3391ac7-d19b-48eb-b8be-9c107dd6562f",
+              "name": "end_dateTime2",
+              "value": "={{ $json.end_datetime }}",
+              "type": "string"
+            },
+            {
+              "id": "f843211a-ff43-427e-9e6a-df8056cc708d",
+              "name": "lastModifiedDateTime2",
+              "value": "={{ $json.last_modified }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1344,
+        2448
+      ],
+      "id": "542b0837-585f-47db-9f06-024bd961b224",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -672,
+        3440
+      ],
+      "id": "7117b268-2e88-4f1f-8d36-cfdd3b784f8f",
+      "name": "Loop Over Items4"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "timeMin": "={{ new Date($('Loop Over Items4').item.json.start_datetime2 + 'Z').toISOString() }}",
+        "timeMax": "={{ new Date($('Loop Over Items4').item.json.end_dateTime2 + 'Z').toISOString() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        3456
+      ],
+      "id": "dae10879-a61c-419a-bd21-81d5b370d489",
+      "name": "Get many events2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "53666a1b-7f05-45ce-a0d8-236bcf80c54a",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        3584
+      ],
+      "id": "8091fd54-d07a-4899-9118-c71e913cbc84",
+      "name": "If any event exists?"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "start": "={{ new Date($('Loop Over Items4').item.json.start_datetime2 + 'Z').toISOString() }}",
+        "end": "={{ new Date($('Loop Over Items4').item.json.end_dateTime2 + 'Z').toISOString() }}",
+        "additionalFields": {
+          "attendees": [],
+          "description": "={{ $('Loop Over Items4').item.json.bodyPreview2 }}\n\n--------------------\nCREATED by AgentCal\n[OutlookID: {{ $('Loop Over Items4').item.json.id2 }}]",
+          "summary": "={{ $('Loop Over Items4').item.json.subject2 }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        3968
+      ],
+      "id": "cfcc1e69-1b5a-445b-92c2-842429bf1ca8",
+      "name": "Create an event2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "baebf87d-f3ca-425e-a6e3-3420b62d8dd3",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "={{ '[OutlookID: ' + $('Loop Over Items4').item.json.id2 + ']' }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        496,
+        3488
+      ],
+      "id": "229e3b53-30ed-4281-8f48-3ec600131b12",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cb2174eb-a72b-4366-8c9d-bfde6c76bd99",
+              "leftValue": "={{ $json.summary }}",
+              "rightValue": "={{ $('Loop Over Items4').item.json.subject2 }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        688,
+        3664
+      ],
+      "id": "58bece24-554e-416f-aa88-4aae6048ec0f",
+      "name": "If2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        944,
+        3760
+      ],
+      "id": "bca3a8e2-46fd-4471-822c-4cd53e94dbf7",
+      "name": "Discrepency Found"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -400,
+        1808
+      ],
+      "id": "6311d43a-82f8-41ca-b14a-847526363721",
+      "name": "Loop Over Items5"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "id"
+        },
+        "timeMin": "",
+        "timeMax": "",
+        "options": {
+          "query": "=[OutlookID: {{ $('Loop Over Items5').item.json.id2 }}]"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        1824
+      ],
+      "id": "28db9192-dae9-40ed-ae6a-73c44a206184",
+      "name": "Get many events3",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "53666a1b-7f05-45ce-a0d8-236bcf80c54a",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        1824
+      ],
+      "id": "eaa06128-b10c-4421-a993-ea5dcfaf4d8c",
+      "name": "If any event exists?1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "baebf87d-f3ca-425e-a6e3-3420b62d8dd3",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "AgentCal",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        1808
+      ],
+      "id": "8b8f3136-04a0-4ce9-b697-c7cbdf164c10",
+      "name": "If5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cb2174eb-a72b-4366-8c9d-bfde6c76bd99",
+              "leftValue": "={{ $json.summary }}",
+              "rightValue": "={{ $('Loop Over Items5').item.json.subject2 }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        2016
+      ],
+      "id": "5bbf5567-715a-4915-bd21-6b7605381703",
+      "name": "If6"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        2240
+      ],
+      "id": "65bd05c5-9a52-4437-b1a2-45679acc7aaa",
+      "name": "Discrepency Found1"
+    },
+    {
+      "parameters": {
+        "content": "# A only",
+        "height": 176,
+        "width": 528
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        1760
+      ],
+      "id": "8780ecd8-eb5a-401e-ac0b-34a8090038fb",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "eventId": "={{ $json.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1600,
+        2000
+      ],
+      "id": "3be828ad-1680-4519-8d73-c48919355df0",
+      "name": "Delete an event1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# B only",
+        "height": 176,
+        "width": 528
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        3408
+      ],
+      "id": "df5f01ad-8f20-4ddc-ae72-1c8954e1054c",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        0,
+        2976
+      ],
+      "id": "e4dca605-7676-4691-8729-7779bae911d2",
+      "name": "Loop Over Items6"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "eventId": "={{ $('Get Many Events under OLD TIME STAMP').item.json.id }}",
+        "updateFields": {
+          "description": "={{ $('Get the UPDATED event').item.json.bodyPreview }}\n\n-----------------\nUPDATED by AgentCal\n[OutlookID: {{ $('Loop Over Items6').item.json.keys.id2 }}]",
+          "end": "={{ new Date($('Get the UPDATED event').item.json.end.dateTime + 'Z').toISOString() }}",
+          "start": "={{ new Date($('Get the UPDATED event').item.json.start.dateTime + 'Z').toISOString() }}",
+          "summary": "={{ $('Get the UPDATED event').item.json.subject }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        3072
+      ],
+      "id": "13fd4e48-32b1-4694-98f2-1760cf436103",
+      "name": "Update an event",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "get",
+        "calendarId": {
+          "__rl": true,
+          "value": "AAMkAGU2YTUwOTE0LTE4Y2MtNGY3Yi05N2I5LTgxMGI2NGY5ZjE4OABGAAAAAABxQsBTgbcpQpJUWAS2MOM6BwA17ExxtyiOR4YCgbik1iQqAAAAAAEGAAA17ExxtyiOR4YCgbik1iQqAAAAAEX0AAA=",
+          "mode": "list",
+          "cachedResultName": "Calendar"
+        },
+        "eventId": {
+          "__rl": true,
+          "value": "={{ $('Loop Over Items6').item.json.keys.id2 }}",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        720,
+        3072
+      ],
+      "id": "2f31da31-656e-4376-b2df-bf93013bc2e7",
+      "name": "Get the UPDATED event",
+      "webhookId": "341e410b-1757-4b09-bf29-fc7b83612add",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "LupFwOBmjPjUkh4C",
+          "name": "Microsoft Outlook account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "ece22123@iiitkalyani.ac.in",
+          "mode": "list",
+          "cachedResultName": "ece22123@iiitkalyani.ac.in"
+        },
+        "timeMin": "",
+        "timeMax": "",
+        "options": {
+          "query": "=[OutlookID: {{ $('Loop Over Items6').item.json.keys.id2 }}]"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        3072
+      ],
+      "id": "e82be9bb-55e5-4424-8faf-51d3e04650d9",
+      "name": "Get Many Events under OLD TIME STAMP",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "pEY4XuUVI1CuGpXN",
+          "name": "anuj cal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -2144,
+        2704
+      ],
+      "id": "9c4463c4-f91b-4c8a-9617-987bec3a7257",
+      "name": "Poll Outlook Calendar2"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1232,
+        3056
+      ],
+      "id": "a4950c48-2626-4275-b6ca-261514a64176",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {
+    "Poll Outlook Calendar2": [
+      {
+        "json": {},
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Get Outlook Events2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Compare Datasets": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items3": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Create a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items4": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get many events2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events2": {
+      "main": [
+        [
+          {
+            "node": "If any event exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If any event exists?": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create an event2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Discrepency Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discrepency Found": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items5": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get many events3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events3": {
+      "main": [
+        [
+          {
+            "node": "If any event exists?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If any event exists?1": {
+      "main": [
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If5": {
+      "main": [
+        [
+          {
+            "node": "If6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If6": {
+      "main": [
+        [
+          {
+            "node": "Delete an event1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Discrepency Found1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discrepency Found1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items6": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get Many Events under OLD TIME STAMP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update an event": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the UPDATED event": {
+      "main": [
+        [
+          {
+            "node": "Update an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Many Events under OLD TIME STAMP": {
+      "main": [
+        [
+          {
+            "node": "Get the UPDATED event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Outlook Calendar2": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Outlook Events2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0c08c8d1-73df-49a4-90f8-5bd544e67a65",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e907079557ea159152450751e0fce39bd9242200557dcdd8ab8967fe8f5b3c7"
+  },
+  "id": "pF3lefCPZJLpkCgk",
+  "tags": []
+}

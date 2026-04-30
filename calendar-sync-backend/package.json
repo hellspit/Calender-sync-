@@ -1,0 +1,29 @@
+{
+  "name": "calendar-sync-backend",
+  "version": "1.0.0",
+  "description": "Two-way Google Calendar ↔ Outlook Calendar sync backend",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "setup-db": "ts-node scripts/setup-dynamodb.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.700.0",
+    "axios": "^1.13.6",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "@types/uuid": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}
